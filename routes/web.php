@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Tampilan Dashboard
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::get('/', [DashboardController::class, 'index']);
+// Endpoint untuk ESP32 Wokwi
+Route::post('/terima-data', [DashboardController::class, 'store']);
