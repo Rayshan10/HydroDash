@@ -10,6 +10,29 @@
     <meta http-equiv="refresh" content="10">
 </head>
 
+<div id="alert-container" class="max-w-6xl mx-auto mb-4 hidden">
+    <div
+        class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex items-center justify-between animate-bounce">
+        <div class="flex items-center">
+            <svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+                <p class="font-bold">Peringatan Sistem!</p>
+                <p id="alert-message" class="text-sm">Kondisi air sedang tidak optimal.</p>
+            </div>
+        </div>
+        <button onclick="document.getElementById('alert-container').remove()" class="text-red-500 hover:text-red-800">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+
 <body class="bg-gray-100 p-8">
     <div class="max-w-6xl mx-auto">
         <div class="flex justify-between items-center mb-8">
@@ -115,7 +138,34 @@
         </div>
     </div>
 
+
     <script>
+        // 2. Tambahkan logika pengecekan Alert di dalam tag <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ph = {{ $latest->ph ?? 7 }};
+            const temp = {{ $latest->suhu ?? 25 }};
+            const tds = {{ $latest->tds ?? 500 }};
+
+            const alertBox = document.getElementById('alert-container');
+            const alertMsg = document.getElementById('alert-message');
+            let issues = [];
+
+            // Logika Batas Normal (Sesuaikan dengan kebutuhan Anda)
+            if (ph < 5.5) issues.push("pH terlalu asam (" + ph + ")");
+            if (ph > 8.5) issues.push("pH terlalu basa (" + ph + ")");
+            if (temp > 32) issues.push("Suhu terlalu panas (" + temp + "°C)");
+            if (tds > 1500) issues.push("Nutrisi (TDS) terlalu pekat (" + tds + " PPM)");
+
+            if (issues.length > 0) {
+                alertBox.classList.remove('hidden');
+                alertMsg.innerText = issues.join(" | ");
+
+                // Opsional: Suara Alert (Hanya berjalan jika user sudah berinteraksi dengan page)
+                // let audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+                // audio.play();
+            }
+        });
+
         const ctx = document.getElementById('hydroChart').getContext('2d');
 
         const labels = {!! json_encode(
@@ -187,6 +237,8 @@
             }
         });
     </script>
+
+
 </body>
 
 </html>
