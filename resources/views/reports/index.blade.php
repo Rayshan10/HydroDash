@@ -13,39 +13,45 @@
 <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Laporan Kualitas Air</h1>
-            <p class="text-gray-600">Monitoring dan analisis data sensor kualitas air</p>
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Laporan Kualitas Air</h1>
+                <p class="text-gray-600">Monitoring dan analisis data sensor kualitas air</p>
+            </div>
+            <a href="{{ route('dashboard') }}"
+                class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                ← Kembali ke Dashboard
+            </a>
         </div>
 
         <!-- Filter Section -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form method="GET" action="{{ route('report.index') }}" class="space-y-6">
+            <form method="GET" action="{{ route('report.index') }}" class="space-y-6" id="reportForm">
                 <!-- Report Type Selection -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-4">Jenis Laporan</label>
                     <div class="flex gap-4 flex-wrap">
                         <label class="flex items-center">
                             <input type="radio" name="type" value="daily" {{ $type === 'daily' ? 'checked' : '' }} 
-                                onclick="document.getElementById('filterContainer').innerHTML = document.getElementById('dailyFilter').innerHTML"
+                                onchange="document.getElementById('reportForm').submit()"
                                 class="w-4 h-4 text-blue-600 cursor-pointer">
                             <span class="ml-2 text-gray-700 cursor-pointer">Harian</span>
                         </label>
                         <label class="flex items-center">
                             <input type="radio" name="type" value="monthly" {{ $type === 'monthly' ? 'checked' : '' }} 
-                                onclick="document.getElementById('filterContainer').innerHTML = document.getElementById('monthlyFilter').innerHTML"
+                                onchange="document.getElementById('reportForm').submit()"
                                 class="w-4 h-4 text-blue-600 cursor-pointer">
                             <span class="ml-2 text-gray-700 cursor-pointer">Bulanan</span>
                         </label>
                         <label class="flex items-center">
                             <input type="radio" name="type" value="yearly" {{ $type === 'yearly' ? 'checked' : '' }} 
-                                onclick="document.getElementById('filterContainer').innerHTML = document.getElementById('yearlyFilter').innerHTML"
+                                onchange="document.getElementById('reportForm').submit()"
                                 class="w-4 h-4 text-blue-600 cursor-pointer">
                             <span class="ml-2 text-gray-700 cursor-pointer">Tahunan</span>
                         </label>
                         <label class="flex items-center">
                             <input type="radio" name="type" value="period" {{ $type === 'period' ? 'checked' : '' }} 
-                                onclick="document.getElementById('filterContainer').innerHTML = document.getElementById('periodFilter').innerHTML"
+                                onchange="document.getElementById('reportForm').submit()"
                                 class="w-4 h-4 text-blue-600 cursor-pointer">
                             <span class="ml-2 text-gray-700 cursor-pointer">Periode Custom</span>
                         </label>
@@ -57,68 +63,35 @@
                     @if ($type === 'daily')
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
-                            <input type="date" name="date" value="{{ $date ?? date('Y-m-d') }}" required
+                            <input type="date" name="date" value="{{ $date }}" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     @elseif ($type === 'monthly')
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                            <input type="month" name="month" value="{{ $month ?? date('Y-m') }}" required
+                            <input type="month" name="month" value="{{ $month }}" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     @elseif ($type === 'yearly')
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                            <input type="number" name="year" value="{{ $year ?? date('Y') }}" min="2020" max="{{ date('Y') }}" required
+                            <input type="number" name="year" value="{{ $year }}" min="2020" max="{{ date('Y') }}" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     @elseif ($type === 'period')
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Awal</label>
-                                <input type="date" name="start_date" value="{{ $start_date ?? date('Y-m-d', strtotime('-30 days')) }}" required
+                                <input type="date" name="start_date" value="{{ $startDate }}" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
-                                <input type="date" name="end_date" value="{{ $end_date ?? date('Y-m-d') }}" required
+                                <input type="date" name="end_date" value="{{ $endDate }}" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
                     @endif
-                </div>
-
-                <!-- Hidden Filter Templates (for JavaScript switching) -->
-                <div style="display: none;">
-                    <div id="dailyFilter">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
-                        <input type="date" name="date" value="{{ $date ?? date('Y-m-d') }}" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div id="monthlyFilter">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                        <input type="month" name="month" value="{{ $month ?? date('Y-m') }}" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div id="yearlyFilter">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                        <input type="number" name="year" value="{{ $year ?? date('Y') }}" min="2020" max="{{ date('Y') }}" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div id="periodFilter">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Awal</label>
-                                <input type="date" name="start_date" value="{{ $start_date ?? date('Y-m-d', strtotime('-30 days')) }}" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
-                                <input type="date" name="end_date" value="{{ $end_date ?? date('Y-m-d') }}" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Action Buttons -->
@@ -128,12 +101,12 @@
                     </button>
                     @php
                         $exportParams = ['type' => $type];
-                        if ($type === 'daily') $exportParams['date'] = $date ?? date('Y-m-d');
-                        elseif ($type === 'monthly') $exportParams['month'] = $month ?? date('Y-m');
-                        elseif ($type === 'yearly') $exportParams['year'] = $year ?? date('Y');
+                        if ($type === 'daily') $exportParams['date'] = $date;
+                        elseif ($type === 'monthly') $exportParams['month'] = $month;
+                        elseif ($type === 'yearly') $exportParams['year'] = $year;
                         else {
-                            $exportParams['start_date'] = $start_date ?? date('Y-m-d', strtotime('-30 days'));
-                            $exportParams['end_date'] = $end_date ?? date('Y-m-d');
+                            $exportParams['start_date'] = $startDate;
+                            $exportParams['end_date'] = $endDate;
                         }
                     @endphp
                     <a href="{{ route('report.export', $exportParams) }}"
