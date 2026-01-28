@@ -40,9 +40,42 @@
             <span
                 class="bg-white px-4 py-2 rounded-full shadow-sm text-sm text-gray-500 font-medium border border-gray-200">
                 Update Terakhir:
-                {{ $latest ? $latest->created_at->timezone('Asia/Jakarta')->format('H:i:s') . ' WIB' : '--:--' }}
+                {{ $latest ? \Carbon\Carbon::now('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : '--:--' }}
             </span>
         </div>
+
+        <!-- Report Navigation -->
+        <div class="mb-8">
+            <a href="{{ route('report.index') }}"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition">
+                📊 Lihat Laporan
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
+                <span class="text-sm font-bold text-gray-600">Sistem Pendingin</span>
+                <span
+                    class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pendingin ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
+                    {{ $latest->status_pendingin ?? 'OFF' }}
+                </span>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
+                <span class="text-sm font-bold text-gray-600">Pompa pH Up</span>
+                <span
+                    class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pompa_ph ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
+                    {{ $latest->status_pompa_ph ?? 'OFF' }}
+                </span>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
+                <span class="text-sm font-bold text-gray-600">Pompa Nutrisi</span>
+                <span
+                    class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pompa_tds ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
+                    {{ $latest->status_pompa_tds ?? 'OFF' }}
+                </span>
+            </div>
+        </div>
+
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
@@ -63,33 +96,34 @@
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h3 class="font-bold text-gray-700 mb-4 text-center md:text-left">Grafik Tren Sensor (pH, Suhu, & TDS)</h3>
-            <div class="h-[400px]">
-                <canvas id="hydroChart"></canvas>
-            </div>
-        </div>
+            <h3 class="font-bold text-gray-700 mb-6 text-center text-xl">Grafik Tren Sensor Real-Time</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
-                <span class="text-sm font-bold text-gray-600">Pompa pH Up</span>
-                <span
-                    class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pompa_ph ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
-                    {{ $latest->status_pompa_ph ?? 'OFF' }}
-                </span>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
-                <span class="text-sm font-bold text-gray-600">Pompa Nutrisi</span>
-                <span
-                    class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pompa_tds ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
-                    {{ $latest->status_pompa_tds ?? 'OFF' }}
-                </span>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
-                <span class="text-sm font-bold text-gray-600">Sistem Pendingin</span>
-                <span
-                    class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pendingin ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
-                    {{ $latest->status_pendingin ?? 'OFF' }}
-                </span>
+            <div class="grid grid-cols-1 gap-12">
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h4 class="text-sm font-semibold text-blue-600 mb-2 uppercase tracking-wider">Monitoring Suhu Air
+                    </h4>
+                    <div class="h-[350px] w-full">
+                        <canvas id="suhuChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h4 class="text-sm font-semibold text-emerald-600 mb-2 uppercase tracking-wider">Monitoring pH Level
+                    </h4>
+                    <div class="h-[350px] w-full">
+                        <canvas id="phChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h4 class="text-sm font-semibold text-amber-600 mb-2 uppercase tracking-wider">Monitoring Nutrisi
+                        (TDS)</h4>
+                    <div class="h-[350px] w-full">
+                        <canvas id="tdsChart"></canvas>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -140,104 +174,217 @@
 
 
     <script>
-        // 2. Tambahkan logika pengecekan Alert di dalam tag <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ph = {{ $latest->ph ?? 7 }};
-            const temp = {{ $latest->suhu ?? 25 }};
-            const tds = {{ $latest->tds ?? 500 }};
+            // 1. Ambil Data dari Laravel
+            const labels = {!! json_encode(
+                $logs->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format('H:i:s'))->reverse()->values(),
+            ) !!};
+            const phData = {!! json_encode($logs->pluck('ph')->reverse()->values()) !!};
+            const suhuData = {!! json_encode($logs->pluck('suhu')->reverse()->values()) !!};
+            const tdsData = {!! json_encode($logs->pluck('tds')->reverse()->values()) !!};
 
+            const phLatest = {{ $latest->ph ?? 7 }};
+            const tempLatest = {{ $latest->suhu ?? 25 }};
+            const tdsLatest = {{ $latest->tds ?? 500 }};
+
+            // 2. Logika Alert
             const alertBox = document.getElementById('alert-container');
             const alertMsg = document.getElementById('alert-message');
             let issues = [];
 
-            // Logika Batas Normal (Sesuaikan dengan kebutuhan Anda)
-            if (ph < 5.5) issues.push("pH terlalu asam (" + ph + ")");
-            if (ph > 8.5) issues.push("pH terlalu basa (" + ph + ")");
-            if (temp > 32) issues.push("Suhu terlalu panas (" + temp + "°C)");
-            if (tds > 1500) issues.push("Nutrisi (TDS) terlalu pekat (" + tds + " PPM)");
+            if (phLatest < 5.5) issues.push("pH terlalu asam (" + phLatest + ")");
+            if (phLatest > 6.5) issues.push("pH terlalu basa (" + phLatest + ")"); // Disesuaikan ke 6.5
+            if (tempLatest > 32) issues.push("Suhu panas (" + tempLatest + "°C)");
+            if (tdsLatest < 560 || tdsLatest > 840) issues.push("TDS tidak ideal (" + tdsLatest + " PPM)");
 
-            if (issues.length > 0) {
+            if (issues.length > 0 && alertBox) {
                 alertBox.classList.remove('hidden');
                 alertMsg.innerText = issues.join(" | ");
-
-                // Opsional: Suara Alert (Hanya berjalan jika user sudah berinteraksi dengan page)
-                // let audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
-                // audio.play();
             }
-        });
 
-        const ctx = document.getElementById('hydroChart').getContext('2d');
+            // 3. Helper Function untuk menampilkan Label Ambang Batas di Sumbu Y
+            const forceTicks = (axis, thresholds) => {
+                thresholds.forEach(t => {
+                    if (!axis.ticks.find(tick => tick.value === t)) {
+                        axis.ticks.push({
+                            value: t
+                        });
+                    }
+                });
+                axis.ticks.sort((a, b) => a.value - b.value);
+            };
 
-        const labels = {!! json_encode(
-            $logs->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format('H:i:s'))->reverse()->values(),
-        ) !!};
-        const phData = {!! json_encode($logs->pluck('ph')->reverse()->values()) !!};
-        const suhuData = {!! json_encode($logs->pluck('suhu')->reverse()->values()) !!};
-        const tdsData = {!! json_encode($logs->pluck('tds')->reverse()->values()) !!};
-
-        const hydroChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                        label: 'pH Level',
-                        data: phData,
-                        borderColor: '#10B981',
-                        yAxisID: 'y', // Menggunakan sumbu kiri
-                        tension: 0.4
-                    },
-                    {
+            // --- KONFIGURASI CHART SUHU ---
+            new Chart(document.getElementById('suhuChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
                         label: 'Suhu (°C)',
                         data: suhuData,
                         borderColor: '#3B82F6',
-                        yAxisID: 'y', // Menggunakan sumbu kiri
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
                         tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            max: 50,
+                            min: 0,
+                            ticks: {
+                                callback: function(value) {
+                                    // Menghilangkan angka 30 dan 35 agar tidak bertumpuk dengan 32
+                                    if (value === 30 || value === 35) return null;
+
+                                    // Menampilkan label khusus untuk ambang batas
+                                    if (value === 32) return '32 (Batas)';
+                                    return value;
+                                }
+                            },
+                            // Memasukkan angka 32 ke dalam susunan skala Y
+                            afterBuildTicks: (axis) => forceTicks(axis, [32])
+                        }
                     },
-                    {
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 32,
+                                    yMax: 32,
+                                    borderColor: 'red',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- KONFIGURASI CHART PH (Sama seperti TDS) ---
+            new Chart(document.getElementById('phChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'pH Level',
+                        data: phData,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)', // Ditambahkan fill
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // Bagian Options pada phChart
+                    scales: {
+                        y: {
+                            max: 14,
+                            min: 0,
+                            ticks: {
+                                callback: function(value) {
+                                    // Hapus angka 6 agar tidak menjepit label 5.5 dan 6.5
+                                    if (value === 6) return null;
+                                    if (value === 5.5) return '5.5 (Min)';
+                                    if (value === 6.5) return '6.5 (Max)';
+                                    return value;
+                                }
+                            },
+                            afterBuildTicks: (axis) => forceTicks(axis, [5.5, 6.5])
+                        }
+                    },
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 6.5,
+                                    yMax: 6.5,
+                                    borderColor: 'red',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: 5.5,
+                                    yMax: 5.5,
+                                    borderColor: 'red',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- KONFIGURASI CHART TDS ---
+            new Chart(document.getElementById('tdsChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
                         label: 'TDS (PPM)',
                         data: tdsData,
                         borderColor: '#F59E0B',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         fill: true,
-                        yAxisID: 'y1', // Menggunakan sumbu kanan
                         tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'pH & Suhu'
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            max: 1500,
+                            min: 0,
+                            ticks: {
+                                callback: function(value) {
+                                    // Hapus tick otomatis yang terlalu dekat dengan ambang batas
+                                    if (value === 600 || value === 800) return null;
+
+                                    if (value === 560) return '560 (Min)';
+                                    if (value === 840) return '840 (Max)';
+                                    return value;
+                                }
+                            },
+                            afterBuildTicks: (axis) => forceTicks(axis, [560, 840])
                         }
                     },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'TDS (PPM)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }, // Agar grid tidak tumpuk
-                        beginAtZero: true
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 840,
+                                    yMax: 840,
+                                    borderColor: '#F59E0B',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: 560,
+                                    yMax: 560,
+                                    borderColor: '#F59E0B',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
                     }
                 }
-            }
+            });
         });
     </script>
-
 
 </body>
 
