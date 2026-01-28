@@ -217,37 +217,63 @@
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Waktu</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Suhu (°C)</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">pH</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">TDS (PPM)</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pompa pH</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pompa TDS</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pendingin</th>
+                                @if ($type === 'daily')
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Waktu</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Suhu (°C)</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">pH</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">TDS (PPM)</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pompa pH</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pompa TDS</th>
+                                @else
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                        @if ($type === 'monthly')
+                                            Tanggal
+                                        @elseif ($type === 'yearly')
+                                            Bulan
+                                        @else
+                                            Periode
+                                        @endif
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Suhu (Rata-rata)</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">pH (Rata-rata)</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">TDS (Rata-rata)</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             @foreach ($logs as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="px-2 py-1 rounded {{ $item->status_pompa_ph ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                            {{ $item->status_pompa_ph ? 'Aktif' : 'Mati' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="px-2 py-1 rounded {{ $item->status_pompa_tds ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                            {{ $item->status_pompa_tds ? 'Aktif' : 'Mati' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="px-2 py-1 rounded {{ $item->status_pendingin ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
-                                            {{ $item->status_pendingin ? 'Aktif' : 'Mati' }}
-                                        </span>
-                                    </td>
+                                    @if ($type === 'daily')
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="px-2 py-1 rounded {{ $item->status_pompa_ph ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ $item->status_pompa_ph ? 'Aktif' : 'Mati' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="px-2 py-1 rounded {{ $item->status_pompa_tds ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ $item->status_pompa_tds ? 'Aktif' : 'Mati' }}
+                                            </span>
+                                        </td>
+                                    @elseif ($type === 'monthly')
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y') }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
+                                    @elseif ($type === 'yearly')
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('F Y') }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
+                                    @else
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y') }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

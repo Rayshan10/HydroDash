@@ -60,78 +60,104 @@ class ReportController extends Controller
                 $startDateObj = Carbon::createFromDate($yearVal, $monthVal, 1)->startOfMonth();
                 $endDateObj = Carbon::createFromDate($yearVal, $monthVal, 1)->endOfMonth();
 
-                $data = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])
+                $allData = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])
                     ->orderBy('created_at', 'asc')
                     ->get();
-                $stats = $this->calculateStats($data);
-
-                $displayData = [
-                    'title' => 'Laporan Bulanan',
-                    'subtitle' => $startDateObj->format('F Y'),
-                    'month' => $month,
-                ];
-
-                // Chart data untuk monthly - 1 per hari (last record of the day)
+                
+                // Filtered data - 1 per hari untuk display dan stats
+                $data = collect([]);
+                $chartData = ['labels' => [], 'suhu' => [], 'ph' => [], 'tds' => []];
                 for ($i = 1; $i <= $endDateObj->day; $i++) {
                     $dayDate = $startDateObj->copy()->addDays($i - 1);
                     $dayData = SensorData::whereDate('created_at', $dayDate)->orderBy('created_at', 'desc')->first();
                     if ($dayData) {
+                        $data->push($dayData);
                         $chartData['labels'][] = $dayData->created_at->setTimezone('Asia/Jakarta')->format('d M');
                         $chartData['suhu'][] = $dayData->suhu;
                         $chartData['ph'][] = $dayData->ph;
                         $chartData['tds'][] = $dayData->tds;
                     }
                 }
-
-                // Prepare $logs for data table
+                
+                $stats = $this->calculateStats($allData); // Stats dari semua data untuk akurasi
+                
+                // Averaged data per hari untuk data table
                 $logs = collect([]);
                 for ($i = 1; $i <= $endDateObj->day; $i++) {
                     $dayDate = $startDateObj->copy()->addDays($i - 1);
-                    $dayData = SensorData::whereDate('created_at', $dayDate)->orderBy('created_at', 'desc')->first();
-                    if ($dayData) {
-                        $logs->push($dayData);
+                    $dayReadings = SensorData::whereDate('created_at', $dayDate)->get();
+                    if ($dayReadings->count() > 0) {
+                        $lastReading = $dayReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $dayDate->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($dayReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($dayReadings->avg('ph'), 2);
+                        $avgReading->tds = round($dayReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $logs->push($avgReading);
                     }
                 }
+
+                $displayData = [
+                    'title' => 'Laporan Bulanan',
+                    'subtitle' => $startDateObj->format('F Y'),
+                    'month' => $month,
+                ];
                 break;
 
             case 'yearly':
                 $startDateObj = Carbon::createFromDate($year, 1, 1)->startOfYear();
                 $endDateObj = Carbon::createFromDate($year, 12, 31)->endOfYear();
 
-                $data = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])
+                $allData = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])
                     ->orderBy('created_at', 'asc')
                     ->get();
-                $stats = $this->calculateStats($data);
-
-                $displayData = [
-                    'title' => 'Laporan Tahunan',
-                    'subtitle' => "Tahun {$year}",
-                    'year' => $year,
-                ];
-
-                // Chart data untuk yearly - 1 per bulan (last record of the month)
+                
+                // Filtered data - 1 per bulan untuk display
+                $data = collect([]);
+                $chartData = ['labels' => [], 'suhu' => [], 'ph' => [], 'tds' => []];
                 for ($m = 1; $m <= 12; $m++) {
                     $monthStart = Carbon::createFromDate($year, $m, 1)->startOfMonth();
                     $monthEnd = Carbon::createFromDate($year, $m, 1)->endOfMonth();
                     $monthData = SensorData::whereBetween('created_at', [$monthStart, $monthEnd])->orderBy('created_at', 'desc')->first();
                     if ($monthData) {
+                        $data->push($monthData);
                         $chartData['labels'][] = $monthData->created_at->setTimezone('Asia/Jakarta')->format('M');
                         $chartData['suhu'][] = $monthData->suhu;
                         $chartData['ph'][] = $monthData->ph;
                         $chartData['tds'][] = $monthData->tds;
                     }
                 }
-
-                // Prepare $logs for data table
+                
+                $stats = $this->calculateStats($allData); // Stats dari semua data untuk akurasi
+                
+                // Averaged data per bulan untuk data table
                 $logs = collect([]);
                 for ($m = 1; $m <= 12; $m++) {
                     $monthStart = Carbon::createFromDate($year, $m, 1)->startOfMonth();
                     $monthEnd = Carbon::createFromDate($year, $m, 1)->endOfMonth();
-                    $monthData = SensorData::whereBetween('created_at', [$monthStart, $monthEnd])->orderBy('created_at', 'desc')->first();
-                    if ($monthData) {
-                        $logs->push($monthData);
+                    $monthReadings = SensorData::whereBetween('created_at', [$monthStart, $monthEnd])->get();
+                    if ($monthReadings->count() > 0) {
+                        $lastReading = $monthReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $monthStart->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($monthReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($monthReadings->avg('ph'), 2);
+                        $avgReading->tds = round($monthReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $logs->push($avgReading);
                     }
                 }
+
+                $displayData = [
+                    'title' => 'Laporan Tahunan',
+                    'subtitle' => "Tahun {$year}",
+                    'year' => $year,
+                ];
                 break;
 
             case 'period':
@@ -154,7 +180,18 @@ class ReportController extends Controller
                     'end_date' => $endDate,
                 ];
 
-                // Chart data untuk period - 1 per hari (last record of the day)
+                // Determine sampling interval based on date range
+                $daysDiff = $startDateObj->diffInDays($endDateObj);
+                if ($daysDiff < 30) {
+                    $interval = 1; // 1 per hari
+                } elseif ($daysDiff <= 90) {
+                    $interval = 3; // 1 per 3 hari
+                } else {
+                    $interval = 7; // 1 per minggu
+                }
+
+                // Chart data untuk period - dinamis berdasarkan interval
+                $chartData = ['labels' => [], 'suhu' => [], 'ph' => [], 'tds' => []];
                 $currentDate = $startDateObj->copy()->startOfDay();
                 while ($currentDate <= $endDateObj) {
                     $dayData = SensorData::whereDate('created_at', $currentDate)->orderBy('created_at', 'desc')->first();
@@ -164,18 +201,28 @@ class ReportController extends Controller
                         $chartData['ph'][] = $dayData->ph;
                         $chartData['tds'][] = $dayData->tds;
                     }
-                    $currentDate->addDay();
+                    $currentDate->addDays($interval);
                 }
 
-                // Prepare $logs for data table
+                // Prepare $logs for data table - averaged data dengan interval sampling
                 $logs = collect([]);
                 $currentDate = $startDateObj->copy()->startOfDay();
                 while ($currentDate <= $endDateObj) {
-                    $dayData = SensorData::whereDate('created_at', $currentDate)->orderBy('created_at', 'desc')->first();
-                    if ($dayData) {
-                        $logs->push($dayData);
+                    $periodEnd = $currentDate->copy()->addDays($interval)->endOfDay();
+                    $periodReadings = SensorData::whereBetween('created_at', [$currentDate->copy()->startOfDay(), $periodEnd])->get();
+                    if ($periodReadings->count() > 0) {
+                        $lastReading = $periodReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $currentDate->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($periodReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($periodReadings->avg('ph'), 2);
+                        $avgReading->tds = round($periodReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $logs->push($avgReading);
                     }
-                    $currentDate->addDay();
+                    $currentDate->addDays($interval);
                 }
                 break;
         }
@@ -341,9 +388,25 @@ class ReportController extends Controller
                 list($year, $monthVal) = explode('-', $month);
                 $startDate = Carbon::createFromDate($year, $monthVal, 1)->startOfMonth();
                 $endDate = Carbon::createFromDate($year, $monthVal, 1)->endOfMonth();
-                $data = SensorData::whereBetween('created_at', [$startDate, $endDate])
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                
+                // Averaged data per hari
+                $data = collect();
+                for ($i = 1; $i <= $endDate->day; $i++) {
+                    $dayDate = $startDate->copy()->addDays($i - 1);
+                    $dayReadings = SensorData::whereDate('created_at', $dayDate)->get();
+                    if ($dayReadings->count() > 0) {
+                        $lastReading = $dayReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $dayDate->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($dayReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($dayReadings->avg('ph'), 2);
+                        $avgReading->tds = round($dayReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $data->push($avgReading);
+                    }
+                }
                 $filename = "laporan_bulanan_{$month}.csv";
                 break;
 
@@ -351,20 +414,65 @@ class ReportController extends Controller
                 $year = $request->input('year', Carbon::now()->year);
                 $startDate = Carbon::createFromDate($year, 1, 1)->startOfYear();
                 $endDate = Carbon::createFromDate($year, 12, 31)->endOfYear();
-                $data = SensorData::whereBetween('created_at', [$startDate, $endDate])
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                
+                // Averaged data per bulan
+                $data = collect();
+                for ($m = 1; $m <= 12; $m++) {
+                    $monthStart = Carbon::createFromDate($year, $m, 1)->startOfMonth();
+                    $monthEnd = Carbon::createFromDate($year, $m, 1)->endOfMonth();
+                    $monthReadings = SensorData::whereBetween('created_at', [$monthStart, $monthEnd])->get();
+                    if ($monthReadings->count() > 0) {
+                        $lastReading = $monthReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $monthStart->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($monthReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($monthReadings->avg('ph'), 2);
+                        $avgReading->tds = round($monthReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $data->push($avgReading);
+                    }
+                }
                 $filename = "laporan_tahunan_{$year}.csv";
                 break;
 
             case 'period':
-                $startDate = $request->input('start_date');
-                $endDate = $request->input('end_date');
-                $startDate = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
-                $endDate = Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
-                $data = SensorData::whereBetween('created_at', [$startDate, $endDate])
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                $startDateStr = $request->input('start_date');
+                $endDateStr = $request->input('end_date');
+                $startDate = Carbon::createFromFormat('Y-m-d', $startDateStr)->startOfDay();
+                $endDate = Carbon::createFromFormat('Y-m-d', $endDateStr)->endOfDay();
+                
+                // Determine sampling interval
+                $daysDiff = $startDate->diffInDays($endDate);
+                if ($daysDiff < 30) {
+                    $interval = 1; // 1 per hari
+                } elseif ($daysDiff <= 90) {
+                    $interval = 3; // 1 per 3 hari
+                } else {
+                    $interval = 7; // 1 per minggu
+                }
+                
+                // Averaged data dengan interval sampling
+                $data = collect();
+                $currentDate = $startDate->copy()->startOfDay();
+                while ($currentDate <= $endDate) {
+                    $periodEnd = $currentDate->copy()->addDays($interval)->endOfDay();
+                    $periodReadings = SensorData::whereBetween('created_at', [$currentDate->copy()->startOfDay(), $periodEnd])->get();
+                    if ($periodReadings->count() > 0) {
+                        $lastReading = $periodReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $currentDate->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($periodReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($periodReadings->avg('ph'), 2);
+                        $avgReading->tds = round($periodReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $data->push($avgReading);
+                    }
+                    $currentDate->addDays($interval);
+                }
                 $filename = "laporan_periode_{$startDate->format('Y-m-d')}_{$endDate->format('Y-m-d')}.csv";
                 break;
         }
@@ -389,7 +497,7 @@ class ReportController extends Controller
                     ->orderBy('created_at', 'asc')
                     ->get();
                 $stats = $this->calculateStats($data);
-                $pdf = Pdf::loadView('reports.pdf.daily', compact('data', 'stats', 'dateObj'));
+                $pdf = Pdf::loadView('reports.pdf.daily', ['data' => $data, 'stats' => $stats, 'date' => $dateObj]);
                 return $pdf->download("laporan_harian_{$date}.pdf");
                 break;
 
@@ -398,10 +506,30 @@ class ReportController extends Controller
                 list($year, $monthVal) = explode('-', $month);
                 $startDate = Carbon::createFromDate($year, $monthVal, 1)->startOfMonth();
                 $endDate = Carbon::createFromDate($year, $monthVal, 1)->endOfMonth();
-                $data = SensorData::whereBetween('created_at', [$startDate, $endDate])
+                $allData = SensorData::whereBetween('created_at', [$startDate, $endDate])
                     ->orderBy('created_at', 'asc')
                     ->get();
-                $stats = $this->calculateStats($data);
+                $stats = $this->calculateStats($allData);
+                
+                // Averaged data per hari
+                $data = collect();
+                for ($i = 1; $i <= $endDate->day; $i++) {
+                    $dayDate = $startDate->copy()->addDays($i - 1);
+                    $dayReadings = SensorData::whereDate('created_at', $dayDate)->get();
+                    if ($dayReadings->count() > 0) {
+                        $lastReading = $dayReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $dayDate->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($dayReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($dayReadings->avg('ph'), 2);
+                        $avgReading->tds = round($dayReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $data->push($avgReading);
+                    }
+                }
+                
                 $pdf = Pdf::loadView('reports.pdf.monthly', compact('data', 'stats', 'startDate', 'endDate'));
                 return $pdf->download("laporan_bulanan_{$month}.pdf");
                 break;
@@ -410,25 +538,78 @@ class ReportController extends Controller
                 $year = $request->input('year', Carbon::now()->year);
                 $startDate = Carbon::createFromDate($year, 1, 1)->startOfYear();
                 $endDate = Carbon::createFromDate($year, 12, 31)->endOfYear();
-                $data = SensorData::whereBetween('created_at', [$startDate, $endDate])
+                $allData = SensorData::whereBetween('created_at', [$startDate, $endDate])
                     ->orderBy('created_at', 'asc')
                     ->get();
-                $stats = $this->calculateStats($data);
+                $stats = $this->calculateStats($allData);
+                
+                // Averaged data per bulan
+                $data = collect();
+                for ($m = 1; $m <= 12; $m++) {
+                    $monthStart = Carbon::createFromDate($year, $m, 1)->startOfMonth();
+                    $monthEnd = Carbon::createFromDate($year, $m, 1)->endOfMonth();
+                    $monthReadings = SensorData::whereBetween('created_at', [$monthStart, $monthEnd])->get();
+                    if ($monthReadings->count() > 0) {
+                        $lastReading = $monthReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $monthStart->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($monthReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($monthReadings->avg('ph'), 2);
+                        $avgReading->tds = round($monthReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $data->push($avgReading);
+                    }
+                }
+                
                 $pdf = Pdf::loadView('reports.pdf.yearly', compact('data', 'stats', 'year'));
                 return $pdf->download("laporan_tahunan_{$year}.pdf");
                 break;
 
             case 'period':
-                $startDate = $request->input('start_date');
-                $endDate = $request->input('end_date');
-                $startDateObj = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
-                $endDateObj = Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
-                $data = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])
+                $startDateStr = $request->input('start_date');
+                $endDateStr = $request->input('end_date');
+                $startDateObj = Carbon::createFromFormat('Y-m-d', $startDateStr)->startOfDay();
+                $endDateObj = Carbon::createFromFormat('Y-m-d', $endDateStr)->endOfDay();
+                $allData = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])
                     ->orderBy('created_at', 'asc')
                     ->get();
-                $stats = $this->calculateStats($data);
-                $pdf = Pdf::loadView('reports.pdf.period', compact('data', 'stats', 'startDateObj', 'endDateObj'));
-                return $pdf->download("laporan_periode_{$startDate}_{$endDate}.pdf");
+                $stats = $this->calculateStats($allData);
+                
+                // Determine sampling interval based on date range
+                $daysDiff = $startDateObj->diffInDays($endDateObj);
+                if ($daysDiff < 30) {
+                    $interval = 1; // 1 per hari
+                } elseif ($daysDiff <= 90) {
+                    $interval = 3; // 1 per 3 hari
+                } else {
+                    $interval = 7; // 1 per minggu
+                }
+                
+                // Averaged data untuk PDF dengan interval sampling
+                $data = collect();
+                $currentDate = $startDateObj->copy()->startOfDay();
+                while ($currentDate <= $endDateObj) {
+                    $periodEnd = $currentDate->copy()->addDays($interval)->endOfDay();
+                    $periodReadings = SensorData::whereBetween('created_at', [$currentDate->copy()->startOfDay(), $periodEnd])->get();
+                    if ($periodReadings->count() > 0) {
+                        $lastReading = $periodReadings->last();
+                        $avgReading = new \stdClass();
+                        $avgReading->created_at = $currentDate->copy()->setTime(12, 0, 0);
+                        $avgReading->suhu = round($periodReadings->avg('suhu'), 2);
+                        $avgReading->ph = round($periodReadings->avg('ph'), 2);
+                        $avgReading->tds = round($periodReadings->avg('tds'), 2);
+                        $avgReading->status_pompa_ph = $lastReading->status_pompa_ph ? 1 : 0;
+                        $avgReading->status_pompa_tds = $lastReading->status_pompa_tds ? 1 : 0;
+                        $avgReading->status_pendingin = $lastReading->status_pendingin ? 1 : 0;
+                        $data->push($avgReading);
+                    }
+                    $currentDate->addDays($interval);
+                }
+                
+                $pdf = Pdf::loadView('reports.pdf.period', ['data' => $data, 'stats' => $stats, 'startDate' => $startDateObj, 'endDate' => $endDateObj]);
+                return $pdf->download("laporan_periode_{$startDateStr}_{$endDateStr}.pdf");
                 break;
         }
     }

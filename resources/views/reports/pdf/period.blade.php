@@ -97,7 +97,7 @@
 <body>
     <div class="header">
         <h1>Laporan Periode HydroDash</h1>
-        <p>Dari: {{ $startDate->format('d MMMM Y') }} Hingga: {{ $endDate->format('d MMMM Y') }}</p>
+        <p>Dari: {{ $startDate->format('d M Y') }} Hingga: {{ $endDate->format('d M Y') }}</p>
         <p>Generated: {{ now()->format('d/m/Y H:i:s') }}</p>
     </div>
 
@@ -153,29 +153,23 @@
     <table>
         <thead>
             <tr>
-                <th>Waktu</th>
-                <th>Suhu</th>
-                <th>pH</th>
-                <th>TDS</th>
-                <th>pH Pump</th>
-                <th>TDS Pump</th>
-                <th>Cool</th>
+                <th>Periode</th>
+                <th>Suhu (Rata-rata)</th>
+                <th>pH (Rata-rata)</th>
+                <th>TDS (Rata-rata)</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($data->take(500) as $row)
+            @forelse($data as $row)
                 <tr>
-                    <td>{{ $row->created_at->timezone('Asia/Jakarta')->format('d/m H:i') }}</td>
-                    <td>{{ $row->suhu }}</td>
-                    <td>{{ $row->ph }}</td>
-                    <td>{{ $row->tds }}</td>
-                    <td>{{ $row->status_pompa_ph }}</td>
-                    <td>{{ $row->status_pompa_tds }}</td>
-                    <td>{{ $row->status_pendingin }}</td>
+                    <td>{{ $row->created_at->timezone('Asia/Jakarta')->format('d/m/Y') }}</td>
+                    <td>{{ number_format($row->suhu, 2) }}</td>
+                    <td>{{ number_format($row->ph, 2) }}</td>
+                    <td>{{ number_format($row->tds, 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 20px;">Tidak ada data untuk periode ini</td>
+                    <td colspan="4" style="text-align: center; padding: 20px;">Tidak ada data untuk periode ini</td>
                 </tr>
             @endforelse
         </tbody>
