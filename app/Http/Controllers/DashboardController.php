@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SensorData; // Menggunakan model SensorData sesuai kode Anda
+use App\Models\SensorData; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -18,7 +18,7 @@ class DashboardController extends Controller
         return view('dashboard', compact('logs', 'latest'));
     }
 
-    // --- FUNGSI BARU UNTUK AJAX REAL-TIME ---
+    // --- FUNGSI UNTUK AJAX REAL-TIME ---
     public function getLatest()
     {
         $latest = SensorData::latest()->first();
@@ -27,7 +27,6 @@ class DashboardController extends Controller
             return response()->json(['status' => 'empty'], 404);
         }
 
-        // Mengembalikan data dalam format JSON untuk JavaScript
         return response()->json([
             'ph'    => number_format($latest->ph, 2),
             'tds'   => $latest->tds,
@@ -41,6 +40,7 @@ class DashboardController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi Input
         $validator = Validator::make($request->all(), [
             'ph'   => 'required|numeric',
             'tds'  => 'required|numeric',
@@ -48,7 +48,7 @@ class DashboardController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error'], 400);
+            return response()->json(['status' => 'error', 'errors' => $validator->errors()], 400);
         }
 
         $data = new SensorData();
@@ -56,13 +56,14 @@ class DashboardController extends Controller
         $data->tds = $request->tds;
         $data->suhu = $request->suhu;
 
-        // Logika Status Otomatis
-        $data->status_pompa_ph = ($request->ph < 5.5) ? 'ON' : 'OFF';
-        $data->status_pompa_tds = ($request->tds < 1050) ? 'ON' : 'OFF';
-        $data->status_pendingin = ($request->suhu > 30.0) ? 'ON' : 'OFF';
+        // 2. Logika Sinkronisasi Status (Prioritas Kiriman ESP32)
+        // Jika ESP32 mengirim status, gunakan itu. Jika tidak, hitung otomatis berdasarkan ambang batas baru.
+        $data->status_pompa_ph = $request->status_pompa_ph ?? (($request->ph < 5.5) ? 'ON' : 'OFF');
+        $data->status_pompa_tds = $request->status_pompa_tds ?? (($request->tds < 560) ? 'ON' : 'OFF');
+        $data->status_pendingin = $request->status_pendingin ?? (($request->suhu > 32.0) ? 'ON' : 'OFF');
 
         $data->save();
 
-        return response()->json(['status' => 'success', 'message' => 'Data Saved'], 201);
+        return response()->json(['status' => 'success', 'message' => 'Data Terkirim & Sinkron'], 201);
     }
 }

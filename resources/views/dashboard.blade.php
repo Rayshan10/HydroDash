@@ -208,7 +208,15 @@
                 axis.ticks.sort((a, b) => a.value - b.value);
             };
 
-            // 3. Inisialisasi Chart (Window object agar bisa diakses fungsi update)
+            // --- Fungsi Pembantu untuk Gradien (Taruh di atas inisialisasi chart) ---
+            const createGradient = (ctx, color) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, color.replace('1)', '0.3)')); // Terang di atas
+                gradient.addColorStop(1, color.replace('1)', '0)')); // Transparan di bawah
+                return gradient;
+            };
+
+            // 3. Inisialisasi Carta (Revisi Paparan & Penapisan Angka Paksi-Y)
             window.suhuChartObj = new Chart(document.getElementById('suhuChart').getContext('2d'), {
                 type: 'line',
                 data: {
@@ -217,18 +225,44 @@
                         label: 'Suhu (°C)',
                         data: suhuData,
                         borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)', // Warna biru transparan
-                        fill: true, // Mengaktifkan overlay warna
-                        tension: 0.4
+                        backgroundColor: function(context) {
+                            return createGradient(context.chart.ctx, 'rgba(59, 130, 246, 1)');
+                        },
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 1,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
                         y: {
                             max: 50,
                             min: 0,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    // Membuang angka 30 dan 35 supaya tidak bertindih dengan ambang 32
+                                    if (value === 30 || value === 35) return null;
+                                    if (value === 32) return '32 (Batas)';
+                                    return value;
+                                }
+                            },
                             afterBuildTicks: (axis) => forceTicks(axis, [32])
                         }
                     }
@@ -243,18 +277,45 @@
                         label: 'pH Level',
                         data: phData,
                         borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)', // Warna hijau transparan
-                        fill: true, // Mengaktifkan overlay warna
-                        tension: 0.4
+                        backgroundColor: function(context) {
+                            return createGradient(context.chart.ctx, 'rgba(16, 185, 129, 1)');
+                        },
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 1,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
                         y: {
                             max: 14,
                             min: 0,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    // Membuang angka 6 yang berada di tengah 5.5 dan 6.5
+                                    if (value === 6) return null;
+                                    if (value === 5.5) return '5.5 (Min)';
+                                    if (value === 6.5) return '6.5 (Max)';
+                                    return value;
+                                }
+                            },
                             afterBuildTicks: (axis) => forceTicks(axis, [5.5, 6.5])
                         }
                     }
@@ -269,18 +330,45 @@
                         label: 'TDS (PPM)',
                         data: tdsData,
                         borderColor: '#F59E0B',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)', // Warna kuning transparan
-                        fill: true, // Mengaktifkan overlay warna
-                        tension: 0.4
+                        backgroundColor: function(context) {
+                            return createGradient(context.chart.ctx, 'rgba(245, 158, 11, 1)');
+                        },
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 1,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
                         y: {
                             max: 1500,
                             min: 0,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    // Membuang angka bulat (600, 700, 800) di antara 560 dan 840
+                                    if (value === 600 || value === 700 || value === 800) return null;
+                                    if (value === 560) return '560 (Min)';
+                                    if (value === 840) return '840 (Max)';
+                                    return value;
+                                }
+                            },
                             afterBuildTicks: (axis) => forceTicks(axis, [560, 840])
                         }
                     }
