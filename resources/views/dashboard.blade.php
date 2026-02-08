@@ -155,11 +155,12 @@
                             <th class="p-4">Status Pompa</th>
                         </tr>
                     </thead>
-                    <tbody class="text-sm">
-                        @forelse($logs as $log)
+                    <tbody id="log-table-body" class="text-sm">
+                        @forelse($logs->take(10) as $log)
                             <tr class="border-b hover:bg-gray-50 transition">
                                 <td class="p-4 font-medium text-gray-600">
                                     {{ $log->created_at->timezone('Asia/Jakarta')->format('H:i:s | d-m-Y') }}
+                                </td>
                                 <td class="p-4">{{ $log->suhu }}°C</td>
                                 <td class="p-4 text-green-600 font-semibold">{{ $log->ph }}</td>
                                 <td class="p-4 text-yellow-600 font-semibold">{{ $log->tds }} PPM</td>
@@ -174,8 +175,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="p-8 text-center text-gray-400 italic">Belum ada data masuk
-                                    dari ESP32...</td>
+                                <td colspan="5" class="p-4 text-center text-gray-500">Belum ada data sensor yang
+                                    masuk.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -297,6 +298,7 @@
                         updateUI(data);
                         updateCharts(data);
                         checkAlerts(data.ph, data.suhu, data.tds);
+                        updateTable(data);
                     }
                 } catch (error) {
                     console.error("Gagal mengambil data:", error);
@@ -362,6 +364,51 @@
                 } else if (alertBox) {
                     alertBox.classList.add('hidden');
                 }
+            }
+
+            function updateTable(data) {
+                const tableBody = document.getElementById('log-table-body');
+                if (!tableBody) return;
+
+                // Format Waktu dan Tanggal
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('id-ID', {
+                    hour12: false
+                });
+                const dateString = now.toLocaleDateString('id-ID').replace(/\//g, '-');
+
+                // Logika Warna Badge Status
+                const badgeClass = (status) => status === 'ON' ?
+                    'border-green-500 text-green-500 font-bold' :
+                    'border-gray-300 text-gray-300';
+
+                // Buat Baris Baru (Template Literal)
+                const newRow = `
+                <tr class="border-b hover:bg-gray-50 transition animate-pulse">
+                    <td class="p-4 font-medium text-gray-600">${timeString} | ${dateString}</td>
+                    <td class="p-4">${data.suhu}°C</td>
+                    <td class="p-4 text-green-600 font-semibold">${data.ph}</td>
+                    <td class="p-4 text-yellow-600 font-semibold">${data.tds} PPM</td>
+                    <td class="p-4 space-x-1">
+                        <span class="text-[10px] px-2 py-0.5 rounded border ${badgeClass(data.status_pompa_ph)}">pH</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded border ${badgeClass(data.status_pompa_tds)}">TDS</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded border ${badgeClass(data.status_pendingin)}">Cool</span>
+                    </td>
+                </tr>
+            `;
+
+                // Masukkan ke posisi paling atas
+                tableBody.insertAdjacentHTML('afterbegin', newRow);
+
+                // Hapus baris paling bawah jika sudah lebih dari 10 baris
+                if (tableBody.children.length > 10) {
+                    tableBody.removeChild(tableBody.lastElementChild);
+                }
+
+                // Hapus efek pulse setelah 2 detik
+                setTimeout(() => {
+                    tableBody.firstElementChild.classList.remove('animate-pulse');
+                }, 2000);
             }
 
             // Jalankan Fetch setiap 1 detik (1000 ms)
