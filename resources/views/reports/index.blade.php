@@ -53,7 +53,7 @@
                             <input type="radio" name="type" value="period" {{ $type === 'period' ? 'checked' : '' }} 
                                 onchange="document.getElementById('reportForm').submit()"
                                 class="w-4 h-4 text-blue-600 cursor-pointer">
-                            <span class="ml-2 text-gray-700 cursor-pointer">Periode Custom</span>
+                            <span class="ml-2 text-gray-700 cursor-pointer">Periode</span>
                         </label>
                     </div>
                 </div>

@@ -25,16 +25,24 @@
             font-size: 12px;
             color: #666;
         }
+        /* Stats Grid - 3 kolom simetris (inline-block untuk kompatibilitas DomPDF) */
         .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
+            width: 100%;
             margin-bottom: 30px;
+            text-align: center;
         }
         .stat-box {
+            display: inline-block;
+            width: 31%;
+            margin-right: 2%;
             border: 1px solid #ddd;
             padding: 15px;
             border-radius: 5px;
+            background-color: #f9fafb;
+            vertical-align: top;
+            box-sizing: border-box;
+        }
+        .stat-box:last-child { margin-right: 0; }
             background-color: #f9fafb;
         }
         .stat-box h3 {
@@ -83,6 +91,28 @@
         }
         table tr:nth-child(even) {
             background-color: #f9fafb;
+        }
+        .charts-container {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        .chart-section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .chart-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .chart-wrapper {
+            background-color: #f9fafb;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
         .footer {
             margin-top: 30px;
@@ -144,6 +174,29 @@
                     <p>Maximum</p>
                     <p class="value">{{ $stats['max_tds'] }}</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-section">
+            <div class="chart-title">Grafik Suhu Air Periode (°C)</div>
+            <div class="chart-wrapper">
+                {!! svgLineChart($data, 'suhu', 25, 35, 'rgba(239, 68, 68, 0.8)') !!}
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-title">Grafik pH Level Periode</div>
+            <div class="chart-wrapper">
+                {!! svgLineChart($data, 'ph', 5, 8, 'rgba(59, 130, 246, 0.8)') !!}
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-title">Grafik TDS (PPM) Periode</div>
+            <div class="chart-wrapper">
+                {!! svgLineChart($data, 'tds', 200, 800, 'rgba(34, 197, 94, 0.8)') !!}
             </div>
         </div>
     </div>

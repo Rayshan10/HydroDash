@@ -7,7 +7,6 @@
     <title>HydroDash - Monitoring ESP32 Monolith</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <meta http-equiv="refresh" content="10">
 </head>
 
 <div id="alert-container" class="max-w-6xl mx-auto mb-4 hidden">
@@ -77,21 +76,34 @@
         </div>
 
 
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-green-700">HydroDash Monitoring</h1>
+            <span id="update-time"
+                class="bg-white px-4 py-2 rounded-full shadow-sm text-sm text-gray-500 font-medium border border-gray-200">
+                Update Terakhir:
+                {{ $latest ? \Carbon\Carbon::now('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : '--:--' }}
+            </span>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
                 <p class="text-gray-500 font-semibold uppercase text-xs">Suhu Air</p>
-                <h2 class="text-4xl font-bold text-gray-800">{{ $latest->suhu ?? '--' }}°C</h2>
+                <h2 id="suhu-val" class="text-4xl font-bold text-gray-800">{{ $latest->suhu ?? '--' }}°C</h2>
             </div>
+
             <div
                 class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 hover:shadow-lg transition-shadow">
                 <p class="text-gray-500 font-semibold uppercase text-xs">pH Level</p>
-                <h2 class="text-4xl font-bold text-gray-800">{{ $latest->ph ?? '--' }}</h2>
+                <h2 id="ph-val" class="text-4xl font-bold text-gray-800">{{ $latest->ph ?? '--' }}</h2>
             </div>
+
             <div
                 class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500 hover:shadow-lg transition-shadow">
                 <p class="text-gray-500 font-semibold uppercase text-xs">TDS (Nutrisi)</p>
-                <h2 class="text-4xl font-bold text-gray-800">{{ $latest->tds ?? '--' }} <span
-                        class="text-lg font-normal">PPM</span></h2>
+                <h2 id="tds-val" class="text-4xl font-bold text-gray-800">
+                    {{ $latest->tds ?? '--' }}
+                    <span class="text-lg font-normal">PPM</span>
+                </h2>
             </div>
         </div>
 
@@ -175,34 +187,15 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Ambil Data dari Laravel
-            const labels = {!! json_encode(
+            // 1. Ambil Data Awal dari Laravel
+            let labels = {!! json_encode(
                 $logs->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format('H:i:s'))->reverse()->values(),
             ) !!};
-            const phData = {!! json_encode($logs->pluck('ph')->reverse()->values()) !!};
-            const suhuData = {!! json_encode($logs->pluck('suhu')->reverse()->values()) !!};
-            const tdsData = {!! json_encode($logs->pluck('tds')->reverse()->values()) !!};
+            let phData = {!! json_encode($logs->pluck('ph')->reverse()->values()) !!};
+            let suhuData = {!! json_encode($logs->pluck('suhu')->reverse()->values()) !!};
+            let tdsData = {!! json_encode($logs->pluck('tds')->reverse()->values()) !!};
 
-            const phLatest = {{ $latest->ph ?? 7 }};
-            const tempLatest = {{ $latest->suhu ?? 25 }};
-            const tdsLatest = {{ $latest->tds ?? 500 }};
-
-            // 2. Logika Alert
-            const alertBox = document.getElementById('alert-container');
-            const alertMsg = document.getElementById('alert-message');
-            let issues = [];
-
-            if (phLatest < 5.5) issues.push("pH terlalu asam (" + phLatest + ")");
-            if (phLatest > 6.5) issues.push("pH terlalu basa (" + phLatest + ")"); // Disesuaikan ke 6.5
-            if (tempLatest > 32) issues.push("Suhu panas (" + tempLatest + "°C)");
-            if (tdsLatest < 560 || tdsLatest > 840) issues.push("TDS tidak ideal (" + tdsLatest + " PPM)");
-
-            if (issues.length > 0 && alertBox) {
-                alertBox.classList.remove('hidden');
-                alertMsg.innerText = issues.join(" | ");
-            }
-
-            // 3. Helper Function untuk menampilkan Label Ambang Batas di Sumbu Y
+            // 2. Helper Function (Tetap Dipertahankan)
             const forceTicks = (axis, thresholds) => {
                 thresholds.forEach(t => {
                     if (!axis.ticks.find(tick => tick.value === t)) {
@@ -214,8 +207,8 @@
                 axis.ticks.sort((a, b) => a.value - b.value);
             };
 
-            // --- KONFIGURASI CHART SUHU ---
-            new Chart(document.getElementById('suhuChart').getContext('2d'), {
+            // 3. Inisialisasi Chart (Window object agar bisa diakses fungsi update)
+            window.suhuChartObj = new Chart(document.getElementById('suhuChart').getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -223,8 +216,8 @@
                         label: 'Suhu (°C)',
                         data: suhuData,
                         borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)', // Warna biru transparan
+                        fill: true, // Mengaktifkan overlay warna
                         tension: 0.4
                     }]
                 },
@@ -235,39 +228,13 @@
                         y: {
                             max: 50,
                             min: 0,
-                            ticks: {
-                                callback: function(value) {
-                                    // Menghilangkan angka 30 dan 35 agar tidak bertumpuk dengan 32
-                                    if (value === 30 || value === 35) return null;
-
-                                    // Menampilkan label khusus untuk ambang batas
-                                    if (value === 32) return '32 (Batas)';
-                                    return value;
-                                }
-                            },
-                            // Memasukkan angka 32 ke dalam susunan skala Y
                             afterBuildTicks: (axis) => forceTicks(axis, [32])
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: 32,
-                                    yMax: 32,
-                                    borderColor: 'red',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5]
-                                }
-                            }
                         }
                     }
                 }
             });
 
-            // --- KONFIGURASI CHART PH (Sama seperti TDS) ---
-            new Chart(document.getElementById('phChart').getContext('2d'), {
+            window.phChartObj = new Chart(document.getElementById('phChart').getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -275,58 +242,25 @@
                         label: 'pH Level',
                         data: phData,
                         borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)', // Ditambahkan fill
-                        fill: true,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)', // Warna hijau transparan
+                        fill: true, // Mengaktifkan overlay warna
                         tension: 0.4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    // Bagian Options pada phChart
                     scales: {
                         y: {
                             max: 14,
                             min: 0,
-                            ticks: {
-                                callback: function(value) {
-                                    // Hapus angka 6 agar tidak menjepit label 5.5 dan 6.5
-                                    if (value === 6) return null;
-                                    if (value === 5.5) return '5.5 (Min)';
-                                    if (value === 6.5) return '6.5 (Max)';
-                                    return value;
-                                }
-                            },
                             afterBuildTicks: (axis) => forceTicks(axis, [5.5, 6.5])
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: 6.5,
-                                    yMax: 6.5,
-                                    borderColor: 'red',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5]
-                                },
-                                line2: {
-                                    type: 'line',
-                                    yMin: 5.5,
-                                    yMax: 5.5,
-                                    borderColor: 'red',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5]
-                                }
-                            }
                         }
                     }
                 }
             });
 
-            // --- KONFIGURASI CHART TDS ---
-            new Chart(document.getElementById('tdsChart').getContext('2d'), {
+            window.tdsChartObj = new Chart(document.getElementById('tdsChart').getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -334,8 +268,8 @@
                         label: 'TDS (PPM)',
                         data: tdsData,
                         borderColor: '#F59E0B',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: true,
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)', // Warna kuning transparan
+                        fill: true, // Mengaktifkan overlay warna
                         tension: 0.4
                     }]
                 },
@@ -346,43 +280,92 @@
                         y: {
                             max: 1500,
                             min: 0,
-                            ticks: {
-                                callback: function(value) {
-                                    // Hapus tick otomatis yang terlalu dekat dengan ambang batas
-                                    if (value === 600 || value === 800) return null;
-
-                                    if (value === 560) return '560 (Min)';
-                                    if (value === 840) return '840 (Max)';
-                                    return value;
-                                }
-                            },
                             afterBuildTicks: (axis) => forceTicks(axis, [560, 840])
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: 840,
-                                    yMax: 840,
-                                    borderColor: '#F59E0B',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5]
-                                },
-                                line2: {
-                                    type: 'line',
-                                    yMin: 560,
-                                    yMax: 560,
-                                    borderColor: '#F59E0B',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5]
-                                }
-                            }
                         }
                     }
                 }
             });
+
+            // 4. Logika Update Real-Time
+            async function fetchLatestData() {
+                try {
+                    // Route ini harus sesuai dengan yang ada di api.php Anda
+                    const response = await fetch('/api/get-latest-hydro');
+                    const data = await response.json();
+
+                    if (data) {
+                        updateUI(data);
+                        updateCharts(data);
+                        checkAlerts(data.ph, data.suhu, data.tds);
+                    }
+                } catch (error) {
+                    console.error("Gagal mengambil data:", error);
+                }
+            }
+
+            function updateUI(data) {
+                // Update Nilai pada Kartu Dashboard secara dinamis
+                const suhuElem = document.getElementById('suhu-val');
+                const phElem = document.getElementById('ph-val');
+                const tdsElem = document.getElementById('tds-val');
+                const timeElem = document.getElementById('update-time');
+
+                if (suhuElem) suhuElem.innerText = data.suhu + "°C";
+                if (phElem) phElem.innerText = data.ph;
+                if (tdsElem) tdsElem.innerHTML = data.tds + ' <span class="text-lg font-normal">PPM</span>';
+
+                // Update Waktu Terakhir di Header
+                if (timeElem) {
+                    const now = new Date();
+                    const formattedTime = now.toLocaleTimeString('id-ID', {
+                        hour12: false
+                    });
+                    const formattedDate = now.toLocaleDateString('id-ID').replace(/\//g, '/');
+                    timeElem.innerText = "Update Terakhir: " + formattedDate + " " + formattedTime + " WIB";
+                }
+            }
+
+            function updateCharts(data) {
+                const timeNow = new Date().toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                [window.suhuChartObj, window.phChartObj, window.tdsChartObj].forEach((chart, index) => {
+                    const val = [data.suhu, data.ph, data.tds][index];
+
+                    chart.data.labels.push(timeNow);
+                    chart.data.datasets[0].data.push(val);
+
+                    if (chart.data.labels.length > 10) { // Simpan 10 data terakhir di layar
+                        chart.data.labels.shift();
+                        chart.data.datasets[0].data.shift();
+                    }
+                    chart.update('none'); // Update tanpa animasi agar performa ringan
+                });
+            }
+
+            function checkAlerts(ph, suhu, tds) {
+                const alertBox = document.getElementById('alert-container');
+                const alertMsg = document.getElementById('alert-message');
+                let issues = [];
+
+                if (ph < 5.5) issues.push("pH terlalu asam (" + ph + ")");
+                if (ph > 6.5) issues.push("pH terlalu basa (" + ph + ")");
+                if (suhu > 32) issues.push("Suhu panas (" + suhu + "°C)");
+                if (tds < 560 || tds > 840) issues.push("TDS tidak ideal (" + tds + " PPM)");
+
+                if (issues.length > 0 && alertBox) {
+                    alertBox.classList.remove('hidden');
+                    alertMsg.innerText = issues.join(" | ");
+                } else if (alertBox) {
+                    alertBox.classList.add('hidden');
+                }
+            }
+
+            // Jalankan Fetch setiap 1 detik (1000 ms)
+            setInterval(fetchLatestData, 1000);
         });
     </script>
 
