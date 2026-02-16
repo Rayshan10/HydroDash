@@ -4,275 +4,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Kualitas Air - HydroDash</title>
+    <title>HydroDash - Laporan Kualitas Air</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 </head>
 
-<body class="bg-gray-50">
-<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+<body class="bg-gray-100 p-4 sm:p-8">
     <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8 flex justify-between items-center">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Laporan Kualitas Air</h1>
-                <p class="text-gray-600">Monitoring dan analisis data sensor kualitas air</p>
+                <h1 class="text-3xl font-bold text-green-700">HydroDash Laporan</h1>
+                <p class="text-gray-500 text-sm font-medium">Analisis Riwayat Kualitas Air & Performa Sistem</p>
             </div>
             <a href="{{ route('dashboard') }}"
-                class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-                ← Kembali ke Dashboard
+                class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition flex items-center">
+                <span class="mr-2">←</span> Kembali ke Dashboard
             </a>
         </div>
 
-        <!-- Filter Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
             <form method="GET" action="{{ route('report.index') }}" class="space-y-6" id="reportForm">
-                <!-- Report Type Selection -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-4">Jenis Laporan</label>
-                    <div class="flex gap-4 flex-wrap">
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="daily" {{ $type === 'daily' ? 'checked' : '' }} 
-                                onchange="document.getElementById('reportForm').submit()"
-                                class="w-4 h-4 text-blue-600 cursor-pointer">
-                            <span class="ml-2 text-gray-700 cursor-pointer">Harian</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="monthly" {{ $type === 'monthly' ? 'checked' : '' }} 
-                                onchange="document.getElementById('reportForm').submit()"
-                                class="w-4 h-4 text-blue-600 cursor-pointer">
-                            <span class="ml-2 text-gray-700 cursor-pointer">Bulanan</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="yearly" {{ $type === 'yearly' ? 'checked' : '' }} 
-                                onchange="document.getElementById('reportForm').submit()"
-                                class="w-4 h-4 text-blue-600 cursor-pointer">
-                            <span class="ml-2 text-gray-700 cursor-pointer">Tahunan</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="period" {{ $type === 'period' ? 'checked' : '' }} 
-                                onchange="document.getElementById('reportForm').submit()"
-                                class="w-4 h-4 text-blue-600 cursor-pointer">
-                            <span class="ml-2 text-gray-700 cursor-pointer">Periode</span>
-                        </label>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Pilih Jenis Laporan</label>
+                        <div class="flex flex-wrap gap-3">
+                            @foreach(['daily' => 'Harian', 'monthly' => 'Bulanan', 'yearly' => 'Tahunan', 'period' => 'Periode'] as $val => $label)
+                                <label class="flex items-center cursor-pointer group">
+                                    <input type="radio" name="type" value="{{ $val }}" {{ $type === $val ? 'checked' : '' }} 
+                                        onchange="document.getElementById('reportForm').submit()"
+                                        class="hidden peer">
+                                    <span class="px-5 py-2 rounded-full border border-gray-200 text-sm font-bold transition
+                                        peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600
+                                        group-hover:border-green-400 text-gray-600">
+                                        {{ $label }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex items-end gap-4">
+                        <div class="flex-grow">
+                            @if ($type === 'daily')
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih Tanggal</label>
+                                <input type="date" name="date" value="{{ $date }}" required
+                                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
+                            @elseif ($type === 'monthly')
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih Bulan</label>
+                                <input type="month" name="month" value="{{ $month }}" required
+                                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
+                            @elseif ($type === 'yearly')
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih Tahun</label>
+                                <input type="number" name="year" value="{{ $year }}" min="2020" max="{{ date('Y') }}" required
+                                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
+                            @elseif ($type === 'period')
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Dari</label>
+                                        <input type="date" name="start_date" value="{{ $startDate }}" required
+                                            class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Sampai</label>
+                                        <input type="date" name="end_date" value="{{ $endDate }}" required
+                                            class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition whitespace-nowrap">
+                            Tampilkan
+                        </button>
                     </div>
                 </div>
 
-                <!-- Dynamic Filter Container -->
-                <div id="filterContainer">
-                    @if ($type === 'daily')
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
-                            <input type="date" name="date" value="{{ $date }}" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                    @elseif ($type === 'monthly')
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                            <input type="month" name="month" value="{{ $month }}" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                    @elseif ($type === 'yearly')
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                            <input type="number" name="year" value="{{ $year }}" min="2020" max="{{ date('Y') }}" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                    @elseif ($type === 'period')
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Awal</label>
-                                <input type="date" name="start_date" value="{{ $startDate }}" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
-                                <input type="date" name="end_date" value="{{ $endDate }}" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex gap-4 flex-wrap">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-                        Tampilkan Laporan
-                    </button>
+                <div class="pt-4 border-t flex flex-wrap gap-4">
                     @php
                         $exportParams = ['type' => $type];
                         if ($type === 'daily') $exportParams['date'] = $date;
                         elseif ($type === 'monthly') $exportParams['month'] = $month;
                         elseif ($type === 'yearly') $exportParams['year'] = $year;
-                        else {
-                            $exportParams['start_date'] = $startDate;
-                            $exportParams['end_date'] = $endDate;
-                        }
+                        else { $exportParams['start_date'] = $startDate; $exportParams['end_date'] = $endDate; }
                     @endphp
                     <a href="{{ route('report.export', $exportParams) }}"
-                        class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition flex items-center">
                         📥 Export CSV
                     </a>
                     <a href="{{ route('report.pdf', $exportParams) }}"
-                        class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition flex items-center">
                         📄 Export PDF
                     </a>
                 </div>
             </form>
         </div>
 
-        <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-medium text-gray-600 mb-2">Suhu (°C)</h3>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['avg_suhu'], 2) }}</p>
-                        <p class="text-xs text-gray-500">Rata-rata</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-green-600">Min: {{ number_format($stats['min_suhu'], 2) }}</p>
-                        <p class="text-sm text-red-600">Max: {{ number_format($stats['max_suhu'], 2) }}</p>
-                    </div>
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500 hover:shadow-lg transition">
+                <p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest mb-1">Rata-rata Suhu</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($stats['avg_suhu'], 2) }}°C</h2>
+                <div class="flex justify-between text-[10px] font-bold">
+                    <span class="text-blue-500">MIN: {{ number_format($stats['min_suhu'], 2) }}°</span>
+                    <span class="text-red-500">MAX: {{ number_format($stats['max_suhu'], 2) }}°</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-medium text-gray-600 mb-2">pH</h3>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['avg_ph'], 2) }}</p>
-                        <p class="text-xs text-gray-500">Rata-rata</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-green-600">Min: {{ number_format($stats['min_ph'], 2) }}</p>
-                        <p class="text-sm text-red-600">Max: {{ number_format($stats['max_ph'], 2) }}</p>
-                    </div>
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-emerald-500 hover:shadow-lg transition">
+                <p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest mb-1">Rata-rata pH Level</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($stats['avg_ph'], 2) }}</h2>
+                <div class="flex justify-between text-[10px] font-bold">
+                    <span class="text-blue-500">MIN: {{ number_format($stats['min_ph'], 2) }}</span>
+                    <span class="text-red-500">MAX: {{ number_format($stats['max_ph'], 2) }}</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-medium text-gray-600 mb-2">TDS (PPM)</h3>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['avg_tds'], 2) }}</p>
-                        <p class="text-xs text-gray-500">Rata-rata</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-green-600">Min: {{ number_format($stats['min_tds'], 2) }}</p>
-                        <p class="text-sm text-red-600">Max: {{ number_format($stats['max_tds'], 2) }}</p>
-                    </div>
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-amber-500 hover:shadow-lg transition">
+                <p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest mb-1">Rata-rata Nutrisi</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($stats['avg_tds'], 0) }} <span class="text-xs">PPM</span></h2>
+                <div class="flex justify-between text-[10px] font-bold">
+                    <span class="text-blue-500">MIN: {{ $stats['min_tds'] }}</span>
+                    <span class="text-red-500">MAX: {{ $stats['max_tds'] }}</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-medium text-gray-600 mb-2">Status Peralatan</h3>
-                <div class="space-y-2">
-                    <p class="text-sm">
-                        <span class="font-medium">Pompa pH:</span>
-                        <span class="text-blue-600">{{ $stats['pompa_ph_on'] ?? 0 }} / {{ $stats['total_records'] }}</span>
-                    </p>
-                    <p class="text-sm">
-                        <span class="font-medium">Pompa TDS:</span>
-                        <span class="text-blue-600">{{ $stats['pompa_tds_on'] ?? 0 }} / {{ $stats['total_records'] }}</span>
-                    </p>
-                    <p class="text-sm">
-                        <span class="font-medium">Pendingin:</span>
-                        <span class="text-blue-600">{{ $stats['pendingin_on'] ?? 0 }} / {{ $stats['total_records'] }}</span>
-                    </p>
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-indigo-500 hover:shadow-lg transition">
+                <p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest mb-1">Frekuensi Aktivitas</p>
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-gray-600">Pompa pH:</span>
+                        <span class="text-xs font-bold text-indigo-600">{{ $stats['pompa_ph_on'] }}x</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-gray-600">Pompa TDS:</span>
+                        <span class="text-xs font-bold text-indigo-600">{{ $stats['pompa_tds_on'] }}x</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-gray-600">Cooling:</span>
+                        <span class="text-xs font-bold text-indigo-600">{{ $stats['pendingin_on'] }}x</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Charts Section -->
         @if (count($data) > 0)
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Suhu Chart -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik Suhu (°C)</h3>
-                    <canvas id="suhuChart"></canvas>
-                </div>
-
-                <!-- pH Chart -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik pH</h3>
-                    <canvas id="phChart"></canvas>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-6 mb-8">
-                <!-- TDS Chart -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik TDS (PPM)</h3>
-                    <canvas id="tdsChart"></canvas>
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-6 text-center text-xl">Analisis Grafik Data {{ ucfirst($type) }}</h3>
+                <div class="grid grid-cols-1 gap-12">
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold text-blue-600 mb-4 uppercase tracking-wider">Tren Suhu Air</h4>
+                        <div class="h-[300px] w-full"><canvas id="suhuChart"></canvas></div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold text-emerald-600 mb-4 uppercase tracking-wider">Tren pH Level</h4>
+                        <div class="h-[300px] w-full"><canvas id="phChart"></canvas></div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold text-amber-600 mb-4 uppercase tracking-wider">Tren Nutrisi (TDS)</h4>
+                        <div class="h-[300px] w-full"><canvas id="tdsChart"></canvas></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Data Table -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Data Sensor</h3>
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 mb-12">
+                <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Detail Log Data Sensor</h3>
+                    <span class="text-[10px] text-gray-400 font-medium">Menampilkan {{ count($logs) }} entri</span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                @if ($type === 'daily')
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Waktu</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Suhu (°C)</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">pH</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">TDS (PPM)</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pompa pH</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Pompa TDS</th>
-                                @else
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                                        @if ($type === 'monthly')
-                                            Tanggal
-                                        @elseif ($type === 'yearly')
-                                            Bulan
-                                        @else
-                                            Periode
-                                        @endif
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Suhu (Rata-rata)</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">pH (Rata-rata)</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">TDS (Rata-rata)</th>
-                                @endif
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-[10px] tracking-widest font-bold">
+                                <th class="p-4">Waktu / Periode</th>
+                                <th class="p-4">Suhu</th>
+                                <th class="p-4">pH</th>
+                                <th class="p-4">TDS</th>
+                                @if($type === 'daily') <th class="p-4">Aksi Relay</th> @endif
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody class="text-sm">
                             @foreach ($logs as $item)
-                                <tr class="hover:bg-gray-50">
-                                    @if ($type === 'daily')
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="px-2 py-1 rounded {{ $item->status_pompa_ph ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ $item->status_pompa_ph ? 'Aktif' : 'Mati' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="px-2 py-1 rounded {{ $item->status_pompa_tds ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ $item->status_pompa_tds ? 'Aktif' : 'Mati' }}
-                                            </span>
-                                        </td>
-                                    @elseif ($type === 'monthly')
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y') }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
-                                    @elseif ($type === 'yearly')
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('F Y') }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
-                                    @else
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y') }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->suhu, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->ph, 2) }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($item->tds, 2) }}</td>
+                                <tr class="border-b hover:bg-gray-50 transition">
+                                    <td class="p-4 font-bold text-gray-600">
+                                        @if ($type === 'daily')
+                                            {{ $item->created_at->setTimezone('Asia/Jakarta')->format('H:i:s | d-m-Y') }}
+                                        @elseif ($type === 'monthly')
+                                            {{ $item->created_at->format('d/m/Y') }}
+                                        @elseif ($type === 'yearly')
+                                            {{ $item->created_at->format('F Y') }}
+                                        @else
+                                            {{ $item->created_at->format('d/m/Y') }}
+                                        @endif
+                                    </td>
+                                    <td class="p-4 text-blue-600 font-bold">{{ number_format($item->suhu, 2) }}°C</td>
+                                    <td class="p-4 text-emerald-600 font-bold">{{ number_format($item->ph, 2) }}</td>
+                                    <td class="p-4 text-amber-600 font-bold">{{ number_format($item->tds, 0) }} <span class="text-[10px]">PPM</span></td>
+                                    @if($type === 'daily')
+                                    <td class="p-4 flex gap-1">
+                                        <span class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pompa_ph == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">pH</span>
+                                        <span class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pompa_tds == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">TDS</span>
+                                        <span class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pendingin == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">Cool</span>
+                                    </td>
                                     @endif
                                 </tr>
                             @endforeach
@@ -281,214 +212,79 @@
                 </div>
             </div>
         @else
-            <div class="bg-white rounded-lg shadow-md p-12 text-center">
-                <p class="text-gray-600 text-lg">Tidak ada data untuk periode yang dipilih</p>
+            <div class="bg-white rounded-xl shadow-md p-20 text-center border-2 border-dashed border-gray-200">
+                <div class="text-gray-300 text-6xl mb-4">📭</div>
+                <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Tidak ada data untuk periode ini</p>
             </div>
         @endif
     </div>
-</div>
 
-<!-- Chart.js Script -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-<script>
-    // Helper function untuk memastikan threshold lines muncul di axis
-    function forceTicks(min, max, threshold) {
-        if (Array.isArray(threshold)) {
-            return [...threshold].sort((a, b) => a - b);
-        } else {
-            return [threshold];
-        }
-    }
-
-    // Suhu Chart
-    const suhuCtx = document.getElementById('suhuChart');
-    if (suhuCtx) {
-        const suhuData = @json($chartData['suhu']);
-        const suhuLabels = @json($chartData['labels']);
-        
-        new Chart(suhuCtx, {
-            type: 'line',
-            data: {
-                labels: suhuLabels,
-                datasets: [{
-                    label: 'Suhu (°C)',
-                    data: suhuData,
-                    borderColor: '#f97316',
-                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#f97316',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                    },
-                    annotation: {
-                        annotations: {
-                            threshold: {
-                                type: 'line',
-                                xMin: 0,
-                                xMax: suhuLabels.length,
-                                yValue: 32,
-                                borderColor: '#ef4444',
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                                label: {
-                                    display: true,
-                                    content: ['Threshold: 32°C']
-                                }
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 50,
-                        ticks: {
-                            callback: function(value) {
-                                if (value === 32 || value === 0 || value === 50) return value;
-                                // Sembunyikan beberapa label untuk menghindari overlap
-                                if (suhuLabels.length > 20 && value % 10 !== 0) return '';
-                                return value;
-                            }
-                        }
-                    }
-                }
+    <script>
+        const chartOptions = (color) => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10, weight: 'bold' } } }
             }
         });
 
-        // Draw threshold line manually
-        const plugin = {
-            id: 'thresholdLine',
-            afterDatasetsDraw(chart) {
-                const ctx = chart.ctx;
-                const yScale = chart.scales.y;
-                const yPos = yScale.getPixelForValue(32);
-                
-                ctx.save();
-                ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(chart.chartArea.left, yPos);
-                ctx.lineTo(chart.chartArea.right, yPos);
-                ctx.stroke();
-                ctx.restore();
-            }
+        const createGradient = (ctx, color) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, color.replace('1)', '0.3)'));
+            gradient.addColorStop(1, color.replace('1)', '0)'));
+            return gradient;
         };
-        Chart.register(plugin);
-    }
 
-    // pH Chart
-    const phCtx = document.getElementById('phChart');
-    if (phCtx) {
-        const phData = @json($chartData['ph']);
-        const phLabels = @json($chartData['labels']);
+        document.addEventListener('DOMContentLoaded', () => {
+            const labels = {!! json_encode($chartData['labels']) !!};
 
-        new Chart(phCtx, {
-            type: 'line',
-            data: {
-                labels: phLabels,
-                datasets: [{
-                    label: 'pH',
-                    data: phData,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#3b82f6',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                    }
+            // Suhu Chart
+            new Chart(document.getElementById('suhuChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: @json($chartData['suhu']),
+                        borderColor: '#3B82F6',
+                        backgroundColor: (c) => createGradient(c.chart.ctx, 'rgba(59, 130, 246, 1)'),
+                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 2
+                    }]
                 },
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 14,
-                        ticks: {
-                            callback: function(value) {
-                                if (value === 5.5 || value === 6.5 || value === 0 || value === 14) return value;
-                                if (phLabels.length > 20 && value % 2 !== 0) return '';
-                                return value;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
+                options: chartOptions('#3B82F6')
+            });
 
-    // TDS Chart
-    const tdsCtx = document.getElementById('tdsChart');
-    if (tdsCtx) {
-        const tdsData = @json($chartData['tds']);
-        const tdsLabels = @json($chartData['labels']);
-
-        new Chart(tdsCtx, {
-            type: 'line',
-            data: {
-                labels: tdsLabels,
-                datasets: [{
-                    label: 'TDS (PPM)',
-                    data: tdsData,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#10b981',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                    }
+            // pH Chart
+            new Chart(document.getElementById('phChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: @json($chartData['ph']),
+                        borderColor: '#10B981',
+                        backgroundColor: (c) => createGradient(c.chart.ctx, 'rgba(16, 185, 129, 1)'),
+                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 2
+                    }]
                 },
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 1500,
-                        ticks: {
-                            callback: function(value) {
-                                if (value === 560 || value === 840 || value === 0 || value === 1500) return value;
-                                if (tdsLabels.length > 20 && value % 250 !== 0) return '';
-                                return value;
-                            }
-                        }
-                    }
-                }
-            }
+                options: chartOptions('#10B981')
+            });
+
+            // TDS Chart
+            new Chart(document.getElementById('tdsChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: @json($chartData['tds']),
+                        borderColor: '#F59E0B',
+                        backgroundColor: (c) => createGradient(c.chart.ctx, 'rgba(245, 158, 11, 1)'),
+                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 2
+                    }]
+                },
+                options: chartOptions('#F59E0B')
+            });
         });
-    }
-</script>
+    </script>
 </body>
-
 </html>
