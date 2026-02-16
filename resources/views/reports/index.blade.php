@@ -11,7 +11,7 @@
 
 <body class="bg-gray-100 p-4 sm:p-8">
     <div class="max-w-7xl mx-auto">
-        
+
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-green-700">HydroDash Laporan</h1>
@@ -27,14 +27,16 @@
             <form method="GET" action="{{ route('report.index') }}" class="space-y-6" id="reportForm">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Pilih Jenis Laporan</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Pilih Jenis
+                            Laporan</label>
                         <div class="flex flex-wrap gap-3">
-                            @foreach(['daily' => 'Harian', 'monthly' => 'Bulanan', 'yearly' => 'Tahunan', 'period' => 'Periode'] as $val => $label)
+                            @foreach (['daily' => 'Harian', 'monthly' => 'Bulanan', 'yearly' => 'Tahunan', 'period' => 'Periode'] as $val => $label)
                                 <label class="flex items-center cursor-pointer group">
-                                    <input type="radio" name="type" value="{{ $val }}" {{ $type === $val ? 'checked' : '' }} 
-                                        onchange="document.getElementById('reportForm').submit()"
-                                        class="hidden peer">
-                                    <span class="px-5 py-2 rounded-full border border-gray-200 text-sm font-bold transition
+                                    <input type="radio" name="type" value="{{ $val }}"
+                                        {{ $type === $val ? 'checked' : '' }}
+                                        onchange="document.getElementById('reportForm').submit()" class="hidden peer">
+                                    <span
+                                        class="px-5 py-2 rounded-full border border-gray-200 text-sm font-bold transition
                                         peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600
                                         group-hover:border-green-400 text-gray-600">
                                         {{ $label }}
@@ -47,7 +49,8 @@
                     <div class="flex items-end gap-4">
                         <div class="flex-grow">
                             @if ($type === 'daily')
-                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih Tanggal</label>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih
+                                    Tanggal</label>
                                 <input type="date" name="date" value="{{ $date }}" required
                                     class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
                             @elseif ($type === 'monthly')
@@ -56,7 +59,8 @@
                                     class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
                             @elseif ($type === 'yearly')
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih Tahun</label>
-                                <input type="number" name="year" value="{{ $year }}" min="2020" max="{{ date('Y') }}" required
+                                <input type="number" name="year" value="{{ $year }}" min="2020"
+                                    max="{{ date('Y') }}" required
                                     class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
                             @elseif ($type === 'period')
                                 <div class="grid grid-cols-2 gap-4">
@@ -66,14 +70,16 @@
                                             class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Sampai</label>
+                                        <label
+                                            class="block text-xs font-bold text-gray-500 uppercase mb-2">Sampai</label>
                                         <input type="date" name="end_date" value="{{ $endDate }}" required
                                             class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium">
                                     </div>
                                 </div>
                             @endif
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition whitespace-nowrap">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition whitespace-nowrap">
                             Tampilkan
                         </button>
                     </div>
@@ -82,10 +88,16 @@
                 <div class="pt-4 border-t flex flex-wrap gap-4">
                     @php
                         $exportParams = ['type' => $type];
-                        if ($type === 'daily') $exportParams['date'] = $date;
-                        elseif ($type === 'monthly') $exportParams['month'] = $month;
-                        elseif ($type === 'yearly') $exportParams['year'] = $year;
-                        else { $exportParams['start_date'] = $startDate; $exportParams['end_date'] = $endDate; }
+                        if ($type === 'daily') {
+                            $exportParams['date'] = $date;
+                        } elseif ($type === 'monthly') {
+                            $exportParams['month'] = $month;
+                        } elseif ($type === 'yearly') {
+                            $exportParams['year'] = $year;
+                        } else {
+                            $exportParams['start_date'] = $startDate;
+                            $exportParams['end_date'] = $endDate;
+                        }
                     @endphp
                     <a href="{{ route('report.export', $exportParams) }}"
                         class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition flex items-center">
@@ -120,7 +132,8 @@
 
             <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-amber-500 hover:shadow-lg transition">
                 <p class="text-gray-500 font-bold uppercase text-[10px] tracking-widest mb-1">Rata-rata Nutrisi</p>
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($stats['avg_tds'], 0) }} <span class="text-xs">PPM</span></h2>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($stats['avg_tds'], 0) }} <span
+                        class="text-xs">PPM</span></h2>
                 <div class="flex justify-between text-[10px] font-bold">
                     <span class="text-blue-500">MIN: {{ $stats['min_tds'] }}</span>
                     <span class="text-red-500">MAX: {{ $stats['max_tds'] }}</span>
@@ -148,7 +161,8 @@
 
         @if (count($data) > 0)
             <div class="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-100">
-                <h3 class="font-bold text-gray-700 mb-6 text-center text-xl">Analisis Grafik Data {{ ucfirst($type) }}</h3>
+                <h3 class="font-bold text-gray-700 mb-6 text-center text-xl">Analisis Grafik Data {{ ucfirst($type) }}
+                </h3>
                 <div class="grid grid-cols-1 gap-12">
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <h4 class="text-xs font-bold text-blue-600 mb-4 uppercase tracking-wider">Tren Suhu Air</h4>
@@ -159,7 +173,8 @@
                         <div class="h-[300px] w-full"><canvas id="phChart"></canvas></div>
                     </div>
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <h4 class="text-xs font-bold text-amber-600 mb-4 uppercase tracking-wider">Tren Nutrisi (TDS)</h4>
+                        <h4 class="text-xs font-bold text-amber-600 mb-4 uppercase tracking-wider">Tren Nutrisi (TDS)
+                        </h4>
                         <div class="h-[300px] w-full"><canvas id="tdsChart"></canvas></div>
                     </div>
                 </div>
@@ -167,7 +182,13 @@
 
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 mb-12">
                 <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Detail Log Data Sensor</h3>
+                    <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">
+                        @if ($type === 'daily')
+                            Detail Log Data Rata-Rata Per Jam
+                        @else
+                            Detail Log Data Sensor
+                        @endif
+                    </h3>
                     <span class="text-[10px] text-gray-400 font-medium">Menampilkan {{ count($logs) }} entri</span>
                 </div>
                 <div class="overflow-x-auto">
@@ -178,7 +199,9 @@
                                 <th class="p-4">Suhu</th>
                                 <th class="p-4">pH</th>
                                 <th class="p-4">TDS</th>
-                                @if($type === 'daily') <th class="p-4">Aksi Relay</th> @endif
+                                @if ($type === 'daily')
+                                    <th class="p-4">Status Terakhir</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="text-sm">
@@ -186,24 +209,31 @@
                                 <tr class="border-b hover:bg-gray-50 transition">
                                     <td class="p-4 font-bold text-gray-600">
                                         @if ($type === 'daily')
-                                            {{ $item->created_at->setTimezone('Asia/Jakarta')->format('H:i:s | d-m-Y') }}
+                                            {{-- Menampilkan format jam (08:00 WIB) --}}
+                                            {{ \Carbon\Carbon::parse($item->created_at)->format('H:00') }} WIB
                                         @elseif ($type === 'monthly')
-                                            {{ $item->created_at->format('d/m/Y') }}
+                                            {{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') }}
                                         @elseif ($type === 'yearly')
-                                            {{ $item->created_at->format('F Y') }}
+                                            {{ \Carbon\Carbon::parse($item->created_at)->format('F Y') }}
                                         @else
-                                            {{ $item->created_at->format('d/m/Y') }}
+                                            {{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') }}
                                         @endif
                                     </td>
                                     <td class="p-4 text-blue-600 font-bold">{{ number_format($item->suhu, 2) }}°C</td>
                                     <td class="p-4 text-emerald-600 font-bold">{{ number_format($item->ph, 2) }}</td>
-                                    <td class="p-4 text-amber-600 font-bold">{{ number_format($item->tds, 0) }} <span class="text-[10px]">PPM</span></td>
-                                    @if($type === 'daily')
-                                    <td class="p-4 flex gap-1">
-                                        <span class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pompa_ph == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">pH</span>
-                                        <span class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pompa_tds == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">TDS</span>
-                                        <span class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pendingin == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">Cool</span>
-                                    </td>
+                                    <td class="p-4 text-amber-600 font-bold">{{ number_format($item->tds, 0) }} <span
+                                            class="text-[10px]">PPM</span></td>
+
+                                    @if ($type === 'daily')
+                                        <td class="p-4 flex gap-1">
+                                            {{-- Tooltip info: Menampilkan status alat di akhir jam tersebut --}}
+                                            <span
+                                                class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pompa_ph == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">pH</span>
+                                            <span
+                                                class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pompa_tds == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">TDS</span>
+                                            <span
+                                                class="text-[9px] px-2 py-0.5 rounded border {{ $item->status_pendingin == 'ON' ? 'border-green-500 text-green-500 font-bold bg-green-50' : 'border-gray-200 text-gray-300' }}">Cool</span>
+                                        </td>
                                     @endif
                                 </tr>
                             @endforeach
@@ -214,7 +244,8 @@
         @else
             <div class="bg-white rounded-xl shadow-md p-20 text-center border-2 border-dashed border-gray-200">
                 <div class="text-gray-300 text-6xl mb-4">📭</div>
-                <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Tidak ada data untuk periode ini</p>
+                <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Tidak ada data untuk periode ini
+                </p>
             </div>
         @endif
     </div>
@@ -223,10 +254,28 @@
         const chartOptions = (color) => ({
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10, weight: 'bold' } } }
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    grid: {
+                        color: '#f1f5f9'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         });
 
@@ -248,8 +297,12 @@
                     datasets: [{
                         data: @json($chartData['suhu']),
                         borderColor: '#3B82F6',
-                        backgroundColor: (c) => createGradient(c.chart.ctx, 'rgba(59, 130, 246, 1)'),
-                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 2
+                        backgroundColor: (c) => createGradient(c.chart.ctx,
+                            'rgba(59, 130, 246, 1)'),
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 2
                     }]
                 },
                 options: chartOptions('#3B82F6')
@@ -263,8 +316,12 @@
                     datasets: [{
                         data: @json($chartData['ph']),
                         borderColor: '#10B981',
-                        backgroundColor: (c) => createGradient(c.chart.ctx, 'rgba(16, 185, 129, 1)'),
-                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 2
+                        backgroundColor: (c) => createGradient(c.chart.ctx,
+                            'rgba(16, 185, 129, 1)'),
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 2
                     }]
                 },
                 options: chartOptions('#10B981')
@@ -278,8 +335,12 @@
                     datasets: [{
                         data: @json($chartData['tds']),
                         borderColor: '#F59E0B',
-                        backgroundColor: (c) => createGradient(c.chart.ctx, 'rgba(245, 158, 11, 1)'),
-                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 2
+                        backgroundColor: (c) => createGradient(c.chart.ctx,
+                            'rgba(245, 158, 11, 1)'),
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 2
                     }]
                 },
                 options: chartOptions('#F59E0B')
@@ -287,4 +348,5 @@
         });
     </script>
 </body>
+
 </html>
