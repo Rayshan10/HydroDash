@@ -1,60 +1,60 @@
 # HydroDash
 
-## 1. Tajuk Projek & Ringkasan
+## 1. Judul Proyek & Ringkasan
 **HydroDash**
-HydroDash merupakan sebuah sistem pemantauan kualiti/kuantiti air (dan hidroponik) yang menerima data ukuran daripada peranti IoT (seperti ESP32) secara langsung. Sistem ini menyediakan satu papan pemuka interaktif dengan sistem pelaporan bersepadu untuk kemudahan analisis dan pengekstrakan data.
+HydroDash merupakan sebuah sistem pemantauan kualitas/kuantitas air (dan hidroponik) yang menerima data pengukuran dari perangkat IoT (seperti ESP32) secara *real-time*. Sistem ini menyediakan sebuah dashboard interaktif dengan sistem pelaporan terpadu untuk kemudahan analisis dan ekstraksi data.
 
 ## 2. Teknologi yang Digunakan (Tech Stack)
 - **Frontend**: Laravel Blade, Tailwind CSS 4, Axios, Vite
 - **Backend**: PHP 8.2+, Laravel (v12), domPDF (barryvdh/laravel-dompdf)
-- **Pangkalan Data & Storage**: SQLite / MySQL, storan fail Laravel.
-- **Perkakasan / IoT**: Integrasi sistem menerima data secara berterusan (contoh dari mikropengawal ESP32).
+- **Database & Storage**: SQLite / MySQL, penyimpanan file Laravel.
+- **Perangkat Keras / IoT**: Integrasi sistem yang menerima data secara berkelanjutan (contoh dari mikrokontroler ESP32).
 
-## 3. Ciri-Ciri Utama & Logik Perniagaan
-- **Penerimaan Data IoT Masa Nyata (Real-Time Data)**: Keupayaan untuk menerima bacaan data melalui laluan API/Web khusus (`/terima-data`).
-- **Papan Pemuka Berpusat (Dashboard)**: Memaparkan data ukuran semasa yang sentiasa dikemas kini.
-- **Sistem Laporan Bersepadu (Unified Report System)**: Boleh menapis dan melihat laporan mengikut kriteria: Harian, Bulanan, Tahunan, dan Tempoh kustom.
-- **Eksport Maklumat**: Membolehkan data dieksport ke dalam format PDF (`/report/pdf`) dan format lain yang sesuai (`/report/export`).
+## 3. Fitur Utama & Logika Bisnis
+- **Penerimaan Data IoT Masa Nyata (Real-Time Data)**: Kemampuan untuk menerima pembaruan data melalui *routes* API/Web khusus (`/terima-data`).
+- **Dashboard Terpusat**: Menampilkan data pengukuran terkini yang selalu diperbarui.
+- **Sistem Laporan Terpadu (Unified Report System)**: Mampu memfilter dan melihat laporan berdasarkan kriteria: Harian, Bulanan, Tahunan, dan Periode kustom.
+- **Export Informasi**: Memungkinkan data diekspor ke dalam format PDF (`/report/pdf`) dan format lain yang sesuai (`/report/export`).
 
-## 4. Struktur Direktori Projek
-- `app/`: Menempatkan logik Controller (`DashboardController`, `ReportController`) dan pengurusan Model aplikasi.
-- `routes/`: Mengandungi definisi laluan seperti `web.php` untuk interaksi pengguna/ESP32, dan `api.php` untuk AJAX request (`/get-latest-hydro`).
-- `resources/`: Mengandungi paparan (`views`) UI papan pemuka serta laporan.
-- `public/`: Direktori awam untuk memuatkan aset statik web.
-- `database/`: Fail untuk pengurusan pangkalan data (migrasi, seeder).
+## 4. Struktur Direktori Proyek
+- `app/`: Menempatkan logika Controller (`DashboardController`, `ReportController`) dan pengelolaan Model aplikasi.
+- `routes/`: Berisi definisi *routes* seperti `web.php` untuk interaksi pengguna/ESP32, dan `api.php` untuk AJAX request (`/get-latest-hydro`).
+- `resources/`: Berisi tampilan (Blade template) antarmuka dashboard serta laporan.
+- `public/`: Direktori publik untuk memuat aset statis web.
+- `database/`: File untuk manajemen database (migration, seeder).
 
-## 5. Panduan Pemasangan & Cara Menjalankan Projek
-Arahan untuk melaksanakan aplikasi di pelayan tempatan:
+## 5. Panduan Instalasi & Cara Menjalankan Proyek
+Instruksi untuk menjalankan aplikasi di server lokal:
 
-1. **Pemasangan Dependensi**:
+1. **Instalasi *Dependencies***:
    ```bash
    composer install
    npm install
    ```
-2. **Pembolehubah Persekitaran (Environment Variables)**:
-   Buat salinan tetapan dan tetapkan sambungan pangkalan data:
+2. **Environment Variables**:
+   Buat salinan konfigurasi dan tetapkan koneksi database:
    ```bash
    cp .env.example .env
    ```
-3. **Persediaan Pangkalan Data & Kunci Keselamatan**:
+3. **Persiapan Database & Security Key**:
    ```bash
    php artisan key:generate
    php artisan migrate
    ```
-4. **Jalankan Pembangunan**:
-   Buka dua terminal berasingan untuk menjalankan aplikasi:
+4. **Jalankan *Development***:
+   Buka dua terminal terpisah untuk menjalankan aplikasi:
    ```bash
    npm run dev
    php artisan serve
    ```
 
-## 6. Endpoint API / Skema Pangkalan Data
-Laluan dan endpoint utama yang boleh diakses:
-- **Teras/IoT**:
-  - `GET /` : Halaman Papan Pemuka
-  - `POST /terima-data` : Endpoint bagi ESP32 menghantar data sensor.
-  - `GET /api/get-latest-hydro` : Laluan AJAX bagi mendapatkan data terbaru secara automatik.
+## 6. Endpoint API / Skema Database
+Daftar *routes* dan endpoint utama yang dapat diakses:
+- **Inti/IoT**:
+  - `GET /` : Halaman Dashboard
+  - `POST /terima-data` : Endpoint bagi ESP32 untuk mengirimkan data sensor.
+  - `GET /api/get-latest-hydro` : *Routes* AJAX untuk mengambil data terbaru secara otomatis.
 - **Laporan**:
-  - `GET /report` : Memaparkan ringkasan data mengikut jenis laporan (type=daily/monthly/yearly).
-  - `GET /report/export` : Mengeksport data sebagai fail (seperti CSV/Excel).
-  - `GET /report/pdf` : Menjana dan memuat turun dokumen PDF laporan.
+  - `GET /report` : Menampilkan ringkasan data berdasarkan jenis laporan (type=daily/monthly/yearly).
+  - `GET /report/export` : Meng-*export* data sebagai file (seperti CSV/Excel).
+  - `GET /report/pdf` : Membuat (*generate*) dan mengunduh dokumen PDF laporan.
