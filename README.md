@@ -1,59 +1,60 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# HydroDash
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 1. Tajuk Projek & Ringkasan
+**HydroDash**
+HydroDash merupakan sebuah sistem pemantauan kualiti/kuantiti air (dan hidroponik) yang menerima data ukuran daripada peranti IoT (seperti ESP32) secara langsung. Sistem ini menyediakan satu papan pemuka interaktif dengan sistem pelaporan bersepadu untuk kemudahan analisis dan pengekstrakan data.
 
-## About Laravel
+## 2. Teknologi yang Digunakan (Tech Stack)
+- **Frontend**: Laravel Blade, Tailwind CSS 4, Axios, Vite
+- **Backend**: PHP 8.2+, Laravel (v12), domPDF (barryvdh/laravel-dompdf)
+- **Pangkalan Data & Storage**: SQLite / MySQL, storan fail Laravel.
+- **Perkakasan / IoT**: Integrasi sistem menerima data secara berterusan (contoh dari mikropengawal ESP32).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 3. Ciri-Ciri Utama & Logik Perniagaan
+- **Penerimaan Data IoT Masa Nyata (Real-Time Data)**: Keupayaan untuk menerima bacaan data melalui laluan API/Web khusus (`/terima-data`).
+- **Papan Pemuka Berpusat (Dashboard)**: Memaparkan data ukuran semasa yang sentiasa dikemas kini.
+- **Sistem Laporan Bersepadu (Unified Report System)**: Boleh menapis dan melihat laporan mengikut kriteria: Harian, Bulanan, Tahunan, dan Tempoh kustom.
+- **Eksport Maklumat**: Membolehkan data dieksport ke dalam format PDF (`/report/pdf`) dan format lain yang sesuai (`/report/export`).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 4. Struktur Direktori Projek
+- `app/`: Menempatkan logik Controller (`DashboardController`, `ReportController`) dan pengurusan Model aplikasi.
+- `routes/`: Mengandungi definisi laluan seperti `web.php` untuk interaksi pengguna/ESP32, dan `api.php` untuk AJAX request (`/get-latest-hydro`).
+- `resources/`: Mengandungi paparan (`views`) UI papan pemuka serta laporan.
+- `public/`: Direktori awam untuk memuatkan aset statik web.
+- `database/`: Fail untuk pengurusan pangkalan data (migrasi, seeder).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 5. Panduan Pemasangan & Cara Menjalankan Projek
+Arahan untuk melaksanakan aplikasi di pelayan tempatan:
 
-## Learning Laravel
+1. **Pemasangan Dependensi**:
+   ```bash
+   composer install
+   npm install
+   ```
+2. **Pembolehubah Persekitaran (Environment Variables)**:
+   Buat salinan tetapan dan tetapkan sambungan pangkalan data:
+   ```bash
+   cp .env.example .env
+   ```
+3. **Persediaan Pangkalan Data & Kunci Keselamatan**:
+   ```bash
+   php artisan key:generate
+   php artisan migrate
+   ```
+4. **Jalankan Pembangunan**:
+   Buka dua terminal berasingan untuk menjalankan aplikasi:
+   ```bash
+   npm run dev
+   php artisan serve
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 6. Endpoint API / Skema Pangkalan Data
+Laluan dan endpoint utama yang boleh diakses:
+- **Teras/IoT**:
+  - `GET /` : Halaman Papan Pemuka
+  - `POST /terima-data` : Endpoint bagi ESP32 menghantar data sensor.
+  - `GET /api/get-latest-hydro` : Laluan AJAX bagi mendapatkan data terbaru secara automatik.
+- **Laporan**:
+  - `GET /report` : Memaparkan ringkasan data mengikut jenis laporan (type=daily/monthly/yearly).
+  - `GET /report/export` : Mengeksport data sebagai fail (seperti CSV/Excel).
+  - `GET /report/pdf` : Menjana dan memuat turun dokumen PDF laporan.
