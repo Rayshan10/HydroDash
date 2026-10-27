@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html lang="id">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydroDash - Laporan Kualitas Air</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-</head>
+@section('title', 'HydroDash - Laporan Kualitas Air')
 
-<body class="bg-gray-100 p-4 sm:p-8">
+@section('content')
+
     <div class="max-w-7xl mx-auto">
 
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -189,7 +183,7 @@
                             Detail Log Data Sensor
                         @endif
                     </h3>
-                    <span class="text-[10px] text-gray-400 font-medium">Menampilkan {{ count($logs) }} entri</span>
+                    <span class="text-[10px] text-gray-400 font-medium">Menampilkan {{ $tableLogs->total() }} entri</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
@@ -205,7 +199,7 @@
                             </tr>
                         </thead>
                         <tbody class="text-sm">
-                            @foreach ($logs as $item)
+                            @foreach ($tableLogs as $item)
                                 <tr class="border-b hover:bg-gray-50 transition">
                                     <td class="p-4 font-bold text-gray-600">
                                         @if ($type === 'daily')
@@ -214,7 +208,7 @@
                                         @elseif ($type === 'monthly')
                                             {{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') }}
                                         @elseif ($type === 'yearly')
-                                            {{ \Carbon\Carbon::parse($item->created_at)->format('F Y') }}
+                                            {{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('F Y') }}
                                         @else
                                             {{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') }}
                                         @endif
@@ -240,6 +234,12 @@
                         </tbody>
                     </table>
                 </div>
+                @if ($tableLogs->hasPages())
+                    {{-- Tautan halaman: parameter ?type=...&date=... dst. otomatis dipertahankan --}}
+                    <div class="border-t p-4">
+                        {{ $tableLogs->links() }}
+                    </div>
+                @endif
             </div>
         @else
             <div class="bg-white rounded-xl shadow-md p-20 text-center border-2 border-dashed border-gray-200">
@@ -347,6 +347,4 @@
             });
         });
     </script>
-</body>
-
-</html>
+@endsection

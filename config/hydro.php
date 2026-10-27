@@ -18,7 +18,7 @@ return [
     // seluruh endpoint penerimaan data terkunci otomatis (fail-safe).
     'device_token' => env('IOT_DEVICE_TOKEN'),
 
-    // Batas wajar input sensor (validasi endpoint /terima-data).
+    // Batas wajar input sensor (validasi endpoint /api/terima-data).
     // Nilai di luar rentang ini ditolak (sensor rusak/kabel lepas).
     'limits' => [
         'ph' => ['min' => 0, 'max' => 14],

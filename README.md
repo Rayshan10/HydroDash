@@ -11,7 +11,7 @@ HydroDash merupakan sebuah sistem pemantauan kualitas/kuantitas air (dan hidropo
 - **Perangkat Keras / IoT**: Integrasi sistem yang menerima data secara berkelanjutan (contoh dari mikrokontroler ESP32).
 
 ## 3. Fitur Utama & Logika Bisnis
-- **Penerimaan Data IoT Masa Nyata (Real-Time Data)**: Kemampuan untuk menerima pembaruan data melalui *routes* API/Web khusus (`/terima-data`).
+- **Penerimaan Data IoT Masa Nyata (Real-Time Data)**: Kemampuan untuk menerima pembaruan data melalui *routes* API khusus (`/api/terima-data`).
 - **Dashboard Terpusat**: Menampilkan data pengukuran terkini yang selalu diperbarui.
 - **Sistem Laporan Terpadu (Unified Report System)**: Mampu memfilter dan melihat laporan berdasarkan kriteria: Harian, Bulanan, Tahunan, dan Periode kustom.
 - **Export Informasi**: Memungkinkan data diekspor ke dalam format PDF (`/report/pdf`) dan format lain yang sesuai (`/report/export`).
@@ -44,15 +44,18 @@ Instruksi untuk menjalankan aplikasi di server lokal:
 4. **Jalankan *Development***:
    Buka dua terminal terpisah untuk menjalankan aplikasi:
    ```bash
-   npm run dev
+   npm run dev     # mode pengembangan (build on-the-fly)
    php artisan serve
    ```
+   Untuk rilis/produksi, jalankan `npm run build` sekali saja — hasil *build*
+   disimpan di `public/build` dan dimuat lewat direktif `@vite`. Tailwind juga
+   sudah tidak dilayani dari CDN.
 
 ## 6. Endpoint API / Skema Database
 Daftar *routes* dan endpoint utama yang dapat diakses:
 - **Inti/IoT**:
   - `GET /` : Halaman Dashboard
-  - `POST /terima-data` : Endpoint bagi ESP32 untuk mengirimkan data sensor.
+  - `POST /api/terima-data` : Endpoint satu-satunya bagi ESP32 untuk mengirimkan data sensor.
   - `GET /api/get-latest-hydro` : *Routes* AJAX untuk mengambil data terbaru secara otomatis.
 - **Laporan**:
   - `GET /report` : Menampilkan ringkasan data berdasarkan jenis laporan (type=daily/monthly/yearly).
@@ -60,7 +63,7 @@ Daftar *routes* dan endpoint utama yang dapat diakses:
   - `GET /report/pdf` : Membuat (*generate*) dan mengunduh dokumen PDF laporan.
 
 ## 7. Autentikasi Perangkat IoT (ESP32)
-Mulai fase hardening pertama, endpoint `POST /terima-data` dan `POST /api/terima-data` **wajib mengirim device token**. Token diatur di file `.env`:
+Mulai fase hardening pertama, endpoint `POST /api/terima-data` **wajib mengirim device token**. Token diatur di file `.env`:
 
 ```env
 IOT_DEVICE_TOKEN=
@@ -70,7 +73,7 @@ Contoh pengiriman data dari sketch ESP32 (Arduino):
 
 ```cpp
 HTTPClient http;
-http.begin(client, "http://hydrodash.test/terima-data"); // atau http://IP-SERVER/terima-data
+http.begin(client, "http://hydrodash.test/api/terima-data"); // atau http://IP-SERVER/api/terima-data
 http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 http.addHeader("X-Device-Token", "hd_TOKEN_ANDA");       // <-- WAJIB: token device
 

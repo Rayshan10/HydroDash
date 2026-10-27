@@ -5,10 +5,13 @@ use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
-// DASHBOARD & DATA RECEIVER (ESP32)
+// DASHBOARD
 // ==========================================
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-Route::post('/terima-data', [DashboardController::class, 'store']);
+
+// Ingest data ESP32 hanya lewat SATU endpoint: POST /api/terima-data
+// (lihat routes/api.php) — duplikat web dihapus pada Fase 3 agar tidak ada
+// dua pintu dengan aturan validasi & token yang harus dirawat terpisah.
 
 // ==========================================
 // UNIFIED REPORT SYSTEM

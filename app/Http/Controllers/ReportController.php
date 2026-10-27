@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SensorData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -68,7 +69,7 @@ class ReportController extends Controller
                 $data = $logs; // Agar count($data) > 0 valid
 
                 foreach ($logs as $log) {
-                    $chartData['labels'][] = $log->created_at->format('d M');
+                    $chartData['labels'][] = $log->created_at->translatedFormat('d M');
                     $chartData['suhu'][] = $log->suhu;
                     $chartData['ph'][] = $log->ph;
                     $chartData['tds'][] = $log->tds;
@@ -101,7 +102,7 @@ class ReportController extends Controller
                     $avg->status_pompa_tds = $last?->status_pompa_tds ?? 'OFF';
                     $avg->status_pendingin = $last?->status_pendingin ?? 'OFF';
                     $logs->push($avg);
-                    $chartData['labels'][] = $avg->created_at->format('M');
+                    $chartData['labels'][] = $avg->created_at->translatedFormat('M');
                     $chartData['suhu'][] = $avg->suhu;
                     $chartData['ph'][] = $avg->ph;
                     $chartData['tds'][] = $avg->tds;
@@ -122,7 +123,7 @@ class ReportController extends Controller
                 $logs = $this->getAveragedLogs($startDateObj, $endDateObj);
                 $data = $logs;
                 foreach ($logs as $log) {
-                    $chartData['labels'][] = $log->created_at->format('d M');
+                    $chartData['labels'][] = $log->created_at->translatedFormat('d M');
                     $chartData['suhu'][] = $log->suhu;
                     $chartData['ph'][] = $log->ph;
                     $chartData['tds'][] = $log->tds;
@@ -131,7 +132,20 @@ class ReportController extends Controller
                 break;
         }
 
-        return view('reports.index', compact('type', 'data', 'stats', 'logs', 'displayData', 'chartData', 'date', 'month', 'year', 'startDate', 'endDate'));
+        // Paginasi TABEL saja — grafik tetap menampilkan rentang penuh dari $chartData.
+        // 15 baris per halaman: laporan periode panjang (ratusan hari) tidak lagi
+        // merender ratusan baris sekaligus di halaman laporan.
+        $perPage = 15;
+        $page = max(1, $request->integer('page', 1));
+        $tableLogs = (new LengthAwarePaginator(
+            $logs->forPage($page, $perPage)->values(),
+            $logs->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url()]
+        ))->withQueryString();
+
+        return view('reports.index', compact('type', 'data', 'stats', 'logs', 'tableLogs', 'displayData', 'chartData', 'date', 'month', 'year', 'startDate', 'endDate'));
     }
 
     /**
@@ -332,23 +346,5 @@ class ReportController extends Controller
             fclose($file);
         };
         return response()->stream($callback, 200, $headers);
-    }
-
-    // Fungsi legacy tetap ada tapi memanggil fungsi unified agar tidak error
-    public function exportDaily(Request $request)
-    {
-        return $this->exportReport($request);
-    }
-    public function exportMonthly(Request $request)
-    {
-        return $this->exportReport($request);
-    }
-    public function exportYearly(Request $request)
-    {
-        return $this->exportReport($request);
-    }
-    public function exportPeriod(Request $request)
-    {
-        return $this->exportReport($request);
     }
 }

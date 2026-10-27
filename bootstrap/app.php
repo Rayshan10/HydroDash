@@ -12,10 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Tambahkan baris ini untuk mengecualikan rute ESP32 dari proteksi CSRF
-        $middleware->validateCsrfTokens(except: [
-            '/terima-data',
-        ]);
+        // Endpoint ESP32 (`/api/terima-data`) hidup di grup `api` tanpa CSRF,
+        // sehingga tidak perlu pengecualian di sini. Route web ingest sudah
+        // dihapus pada Fase 3 (single endpoint dedupe).
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html lang="id">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydroDash - Monitoring ESP32 Monolith</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+@section('title', 'HydroDash - Monitoring ESP32 Monolith')
 
-<body class="bg-gray-100 p-8">
+@section('content')
+
     <div id="alert-container" class="max-w-6xl mx-auto mb-4 hidden">
         <div
             class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex items-center justify-between animate-bounce">
@@ -580,6 +574,4 @@
         });
     </script>
 
-</body>
-
-</html>
+@endsection

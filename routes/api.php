@@ -8,8 +8,9 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// Rute untuk menerima data dari ESP32 (Sudah ada)
+// Satu-satunya pintu ingest data sensor ESP32 — token via header
+// X-Device-Token atau field token, validasi & fallback dari config/hydro.php.
 Route::post('/terima-data', [DashboardController::class, 'store']);
 
-// TAMBAHKAN INI: Rute untuk memberikan data terbaru ke Dashboard (AJAX)
+// AJAX dashboard: ambil data terbaru (dipanggil tiap 1 detik)
 Route::get('/get-latest-hydro', [DashboardController::class, 'getLatest']);
