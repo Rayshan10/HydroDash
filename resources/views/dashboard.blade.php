@@ -69,11 +69,15 @@
 
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-bold text-green-700">HydroDash Monitoring</h1>
-            <span id="update-time"
-                class="bg-white px-4 py-2 rounded-full shadow-sm text-sm text-gray-500 font-medium border border-gray-200">
-                Update Terakhir:
-                {{ $latest ? \Carbon\Carbon::now('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : '--:--' }}
-            </span>
+            <div class="flex items-center gap-3">
+                <span id="live-status"
+                    class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-400">—</span>
+                <span id="update-time"
+                    class="bg-white px-4 py-2 rounded-full shadow-sm text-sm text-gray-500 font-medium border border-gray-200">
+                    Update Terakhir:
+                    {{ $latest ? \Carbon\Carbon::now('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : '--:--' }}
+                </span>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -179,6 +183,37 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 0. Konfigurasi dari backend (config/hydro.php) — satu sumber kebenaran ambang batas
+            const THRESH = @json(config('hydro.thresholds'));
+            const STALE_AFTER = @json(config('hydro.stale_after_seconds', 120));
+
+            // Id data terakhir yang sudah dirender dari backend, agar baris yang sama
+            // tidak muncul berulang (baris tabel & titik grafik tak ter-diduplikasi tiap detik)
+            let lastDataId = {{ ($latest && $latest->id) ? $latest->id : 'null' }};
+
+            // Helper: indikator Live/Offline berdasarkan usia data terakhir
+            function updateStaleStatus(ageSeconds) {
+                const el = document.getElementById('live-status');
+                if (!el) return;
+
+                if (ageSeconds === undefined || ageSeconds === null) {
+                    el.innerText = '—';
+                    el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-400';
+                    return;
+                }
+
+                if (ageSeconds <= STALE_AFTER) {
+                    el.innerText = '● Data Masuk Terbaru';
+                    el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700';
+                } else {
+                    const mins = Math.floor(ageSeconds / 60);
+                    const secs = ageSeconds % 60;
+                    const label = mins >= 1 ? (mins + ' menit ' + secs + ' detik') : (secs + ' detik');
+                    el.innerText = '● Periksa ESP32 — data tertahan ' + label + ' lalu';
+                    el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700';
+                }
+            }
+
             // 1. Ambil Data Awal dari Laravel
             let labels = {!! json_encode(
                 $logs->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format('H:i:s'))->reverse()->values(),
@@ -248,13 +283,13 @@
                             },
                             ticks: {
                                 callback: function(value) {
-                                    // Membuang angka 30 dan 35 supaya tidak bertindih dengan ambang 32
+                                    // Membuang angka 30 dan 35 supaya tidak bertindih dengan ambang suhu
                                     if (value === 30 || value === 35) return null;
-                                    if (value === 32) return '32 (Batas)';
+                                    if (value === THRESH.cooler.on_above) return value + ' (Batas)';
                                     return value;
                                 }
                             },
-                            afterBuildTicks: (axis) => forceTicks(axis, [32])
+                            afterBuildTicks: (axis) => forceTicks(axis, [THRESH.cooler.on_above])
                         }
                     }
                 }
@@ -300,14 +335,14 @@
                             },
                             ticks: {
                                 callback: function(value) {
-                                    // Membuang angka 6 yang berada di tengah 5.5 dan 6.5
+                                    // Membuang angka 6 yang berada di tengah ambang pH (dari config)
                                     if (value === 6) return null;
-                                    if (value === 5.5) return '5.5 (Min)';
-                                    if (value === 6.5) return '6.5 (Max)';
+                                    if (value === THRESH.ph.min) return value + ' (Min)';
+                                    if (value === THRESH.ph.max) return value + ' (Max)';
                                     return value;
                                 }
                             },
-                            afterBuildTicks: (axis) => forceTicks(axis, [5.5, 6.5])
+                            afterBuildTicks: (axis) => forceTicks(axis, [THRESH.ph.min, THRESH.ph.max])
                         }
                     }
                 }
@@ -353,14 +388,14 @@
                             },
                             ticks: {
                                 callback: function(value) {
-                                    // Membuang angka bulat (600, 700, 800) di antara 560 dan 840
+                                    // Membuang angka bulat (600, 700, 800) di antara ambang TDS (dari config)
                                     if (value === 600 || value === 700 || value === 800) return null;
-                                    if (value === 560) return '560 (Min)';
-                                    if (value === 840) return '840 (Max)';
+                                    if (value === THRESH.tds.min) return value + ' (Min)';
+                                    if (value === THRESH.tds.max) return value + ' (Max)';
                                     return value;
                                 }
                             },
-                            afterBuildTicks: (axis) => forceTicks(axis, [560, 840])
+                            afterBuildTicks: (axis) => forceTicks(axis, [THRESH.tds.min, THRESH.tds.max])
                         }
                     }
                 }
@@ -394,8 +429,19 @@
                     // JANGAN perbarui grafik/tabel (mencegah nilai undefined/NaN masuk ke UI)
                     if (!response.ok) {
                         updateUI(null);
+                        updateStaleStatus(null);
                         return;
                     }
+
+                    // Indikator Live/Offline selalu disegarkan sesuai usia data terakhir
+                    updateStaleStatus(data.age_seconds);
+
+                    // Dedupe: bila id sama dengan yang sudah tampil, data lama masih yang terbaru
+                    // -> JANGAN push ulang ke tabel/grafik (anti baris-duplikat tiap 1 detik)
+                    if (data.id !== undefined && data.id === lastDataId) {
+                        return;
+                    }
+                    lastDataId = data.id;
 
                     updateUI(data);
                     updateCharts(data);
@@ -471,10 +517,10 @@
                 const alertMsg = document.getElementById('alert-message');
                 let issues = [];
 
-                if (ph < 5.5) issues.push("pH terlalu asam (" + ph + ")");
-                if (ph > 6.5) issues.push("pH terlalu basa (" + ph + ")");
-                if (suhu > 32) issues.push("Suhu panas (" + suhu + "°C)");
-                if (tds < 560 || tds > 840) issues.push("TDS tidak ideal (" + tds + " PPM)");
+                if (ph < THRESH.ph.min) issues.push("pH terlalu asam (" + ph + ")");
+                if (ph > THRESH.ph.max) issues.push("pH terlalu basa (" + ph + ")");
+                if (suhu > THRESH.cooler.on_above) issues.push("Suhu panas (" + suhu + "°C)");
+                if (tds < THRESH.tds.min || tds > THRESH.tds.max) issues.push("TDS tidak ideal (" + tds + " PPM)");
 
                 if (issues.length > 0 && alertBox) {
                     alertBox.classList.remove('hidden');

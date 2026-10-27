@@ -88,3 +88,19 @@ http.end();
 ```
 
 Alternatif tanpa header: tambahkan `&token=hd_TOKEN_ANDA` ke payload. Batas validasi: `ph` 0–14, `tds` 0–5000 PPM, `suhu` −10–60 °C; field `status_*` hanya menerima `ON`/`OFF`. Setelah mengubah `IOT_DEVICE_TOKEN`, jalankan `php artisan config:clear`.
+
+## 8. Pemeliharaan Data (Prune Otomatis)
+Data sensor bertumbuh terus (±6 juta baris/tahun bila dikirim tiap 5 detik). Perintah `sensors:prune` menghapus data yang lebih tua dari batas retensi (`config/hydro.php` → `prune.retention_days`, default 365 hari):
+
+```bash
+php artisan sensors:prune            # pakai default config
+php artisan sensors:prune --days=90  # batas retensi kustom
+```
+
+Jadwal otomatis (harian pukul 03:00) sudah terdaftar di `routes/console.php`. Di Windows, jadwal Laravel butuh salah satu dari:
+
+```bash
+php artisan schedule:work    # proses background; jalankan saat development
+```
+
+atau daftarkan **Task Scheduler** (setiap menit) yang mengeksekusi `php artisan schedule:run` di folder proyek. Setelah mengubah `IOT_DEVICE_TOKEN`, jalankan `php artisan config:clear`.

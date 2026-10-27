@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SensorData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
@@ -63,7 +64,7 @@ class ReportController extends Controller
                 $endDateObj = Carbon::createFromDate($yearVal, $monthVal, 1)->endOfMonth();
                 $allData = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])->get();
                 $stats = $this->calculateStats($allData);
-                $logs = $this->getAveragedLogs($startDateObj, $endDateObj, 1);
+                $logs = $this->getAveragedLogs($startDateObj, $endDateObj);
                 $data = $logs; // Agar count($data) > 0 valid
 
                 foreach ($logs as $log) {
@@ -76,27 +77,34 @@ class ReportController extends Controller
                 break;
 
             case 'yearly':
-                $allData = SensorData::whereYear('created_at', $year)->get();
+                $allData = SensorData::whereYear('created_at', (int) $year)->get();
                 $stats = $this->calculateStats($allData);
-                $logs = collect([]);
-                for ($m = 1; $m <= 12; $m++) {
-                    $monthReadings = SensorData::whereYear('created_at', $year)->whereMonth('created_at', $m)->get();
-                    if ($monthReadings->count() > 0) {
-                        $last = $monthReadings->last();
-                        $avg = new \stdClass();
-                        $avg->created_at = Carbon::createFromDate($year, $m, 1);
-                        $avg->suhu = number_format($monthReadings->avg('suhu'), 2);
-                        $avg->ph = number_format($monthReadings->avg('ph'), 2);
-                        $avg->tds = round($monthReadings->avg('tds'));
-                        $avg->status_pompa_ph = $last->status_pompa_ph;
-                        $avg->status_pompa_tds = $last->status_pompa_tds;
-                        $avg->status_pendingin = $last->status_pendingin;
-                        $logs->push($avg);
-                        $chartData['labels'][] = $avg->created_at->format('M');
-                        $chartData['suhu'][] = $avg->suhu;
-                        $chartData['ph'][] = $avg->ph;
-                        $chartData['tds'][] = $avg->tds;
-                    }
+
+                // Rata-rata tiap bulan dihitung langsung di SQL (GROUP BY bulan) —
+                // dua query, bukan 12 query terpisah lalu dirata-rata di PHP (N+1).
+                $rows = SensorData::selectRaw('MONTH(created_at) as month, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds')
+                    ->whereYear('created_at', (int) $year)
+                    ->groupBy(DB::raw('MONTH(created_at)'))
+                    ->orderBy('month')
+                    ->get();
+
+                $statuses = SensorData::whereIn('id', $rows->pluck('last_id'))->get()->keyBy('id');
+
+                foreach ($rows as $row) {
+                    $last = $statuses->get($row->last_id);
+                    $avg = new \stdClass();
+                    $avg->created_at = Carbon::createFromDate((int) $year, (int) $row->month, 1);
+                    $avg->suhu = number_format($row->avg_suhu, 2);
+                    $avg->ph = number_format($row->avg_ph, 2);
+                    $avg->tds = round($row->avg_tds);
+                    $avg->status_pompa_ph = $last?->status_pompa_ph ?? 'OFF';
+                    $avg->status_pompa_tds = $last?->status_pompa_tds ?? 'OFF';
+                    $avg->status_pendingin = $last?->status_pendingin ?? 'OFF';
+                    $logs->push($avg);
+                    $chartData['labels'][] = $avg->created_at->format('M');
+                    $chartData['suhu'][] = $avg->suhu;
+                    $chartData['ph'][] = $avg->ph;
+                    $chartData['tds'][] = $avg->tds;
                 }
                 $data = $logs;
                 $displayData = ['title' => 'Laporan Tahunan', 'subtitle' => "Tahun $year"];
@@ -111,7 +119,7 @@ class ReportController extends Controller
                 $endDateObj = Carbon::parse($endDate)->endOfDay();
                 $allData = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])->get();
                 $stats = $this->calculateStats($allData);
-                $logs = $this->getAveragedLogs($startDateObj, $endDateObj, 1);
+                $logs = $this->getAveragedLogs($startDateObj, $endDateObj);
                 $data = $logs;
                 foreach ($logs as $log) {
                     $chartData['labels'][] = $log->created_at->format('d M');
@@ -129,58 +137,72 @@ class ReportController extends Controller
     /**
      * Fungsi Helper untuk data rata-rata
      */
-    private function getAveragedLogs($start, $end, $interval)
+
+    /**
+     * Rata-rata per hari dihitung langsung di SQL (GROUP BY DATE) — dua query
+     * untuk seluruh rentang, bukan satu query per hari lalu di-rata-ratakan di
+     * PHP (N+1). Status relay diambil dari baris TERAKHIR tiap hari (MAX(id)).
+     */
+    private function getAveragedLogs($start, $end)
     {
-        $logs = collect([]);
-        $current = $start->copy();
-        while ($current <= $end) {
-            $periodEnd = $current->copy()->addDays($interval)->endOfDay();
-            $readings = SensorData::whereBetween('created_at', [$current, $periodEnd])->get();
-            if ($readings->count() > 0) {
-                $last = $readings->last();
-                $avg = new \stdClass();
-                $avg->created_at = $current->copy();
-                $avg->suhu = number_format($readings->avg('suhu'), 2);
-                $avg->ph = number_format($readings->avg('ph'), 2);
-                $avg->tds = round($readings->avg('tds'));
-                $avg->status_pompa_ph = $last->status_pompa_ph;
-                $avg->status_pompa_tds = $last->status_pompa_tds;
-                $avg->status_pendingin = $last->status_pendingin;
-                $logs->push($avg);
-            }
-            $current->addDays($interval);
+        $rows = SensorData::selectRaw("DATE(created_at) as day, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds, COUNT(*) as total")
+            ->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy(DB::raw('DATE(created_at)'))
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return collect([]);
         }
-        return $logs;
+
+        $statuses = SensorData::whereIn('id', $rows->pluck('last_id'))->get()->keyBy('id');
+
+        return $rows->map(function ($row) use ($statuses) {
+            $last = $statuses->get($row->last_id);
+            $avg = new \stdClass();
+            $avg->created_at = Carbon::parse($row->day);
+            $avg->suhu = number_format($row->avg_suhu, 2);
+            $avg->ph = number_format($row->avg_ph, 2);
+            $avg->tds = round($row->avg_tds);
+            $avg->status_pompa_ph = $last?->status_pompa_ph ?? 'OFF';
+            $avg->status_pompa_tds = $last?->status_pompa_tds ?? 'OFF';
+            $avg->status_pendingin = $last?->status_pendingin ?? 'OFF';
+            return $avg;
+        });
     }
 
     private function getHourlyAveragedLogs($date)
     {
-        $hourlyLogs = collect([]);
+        // Rata-rata per jam dihitung di SQL (GROUP BY HOUR) — dua query untuk
+        // seluruh hari, bukan 24 query terpisah (N+1).
+        $rows = SensorData::selectRaw('HOUR(created_at) as hour, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds, COUNT(*) as total')
+            ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
+            ->groupBy(DB::raw('HOUR(created_at)'))
+            ->orderBy('hour')
+            ->get();
 
-        for ($h = 0; $h < 24; $h++) {
-            $startTime = $date->copy()->startOfDay()->addHours($h);
-            $endTime = $startTime->copy()->endOfHour();
-
-            $readings = SensorData::whereBetween('created_at', [$startTime, $endTime])->get();
-
-            if ($readings->count() > 0) {
-                $last = $readings->last();
-                $avg = new \stdClass();
-                // Simpan waktu awal jam tersebut
-                $avg->created_at = $startTime;
-                $avg->suhu = number_format($readings->avg('suhu'), 2);
-                $avg->ph = number_format($readings->avg('ph'), 2);
-                $avg->tds = round($readings->avg('tds'));
-
-                // Ambil status relay terakhir pada jam tersebut
-                $avg->status_pompa_ph = $last->status_pompa_ph;
-                $avg->status_pompa_tds = $last->status_pompa_tds;
-                $avg->status_pendingin = $last->status_pendingin;
-
-                $hourlyLogs->push($avg);
-            }
+        if ($rows->isEmpty()) {
+            return collect([]);
         }
-        return $hourlyLogs;
+
+        $statuses = SensorData::whereIn('id', $rows->pluck('last_id'))->get()->keyBy('id');
+
+        return $rows->map(function ($row) use ($date, $statuses) {
+            $last = $statuses->get($row->last_id);
+            $avg = new \stdClass();
+            // Simpan waktu awal jam tersebut (sudut format 'H:00 WIB' di Blade tetap benar)
+            $avg->created_at = $date->copy()->startOfDay()->addHours((int) $row->hour);
+            $avg->suhu = number_format($row->avg_suhu, 2);
+            $avg->ph = number_format($row->avg_ph, 2);
+            $avg->tds = round($row->avg_tds);
+
+            // Ambil status relay dari baris terakhir pada jam tersebut
+            $avg->status_pompa_ph = $last?->status_pompa_ph ?? 'OFF';
+            $avg->status_pompa_tds = $last?->status_pompa_tds ?? 'OFF';
+            $avg->status_pendingin = $last?->status_pendingin ?? 'OFF';
+
+            return $avg;
+        });
     }
 
     /**

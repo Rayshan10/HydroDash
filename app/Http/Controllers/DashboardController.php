@@ -28,13 +28,16 @@ class DashboardController extends Controller
         }
 
         return response()->json([
+            'id'    => $latest->id,
             'ph'    => number_format($latest->ph, 2),
             'tds'   => $latest->tds,
             'suhu'  => number_format($latest->suhu, 2),
             'status_pompa_ph'  => $latest->status_pompa_ph,
             'status_pompa_tds' => $latest->status_pompa_tds,
             'status_pendingin' => $latest->status_pendingin,
-            'time'  => Carbon::parse($latest->created_at)->timezone('Asia/Jakarta')->format('H:i:s')
+            'time'  => Carbon::parse($latest->created_at)->timezone('Asia/Jakarta')->format('H:i:s'),
+            // Usia data terakhir (detik) untuk indikator Live/Offline di dashboard
+            'age_seconds' => (int) abs(Carbon::now()->diffInSeconds($latest->created_at)),
         ]);
     }
 
@@ -49,11 +52,12 @@ class DashboardController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Perangkat tidak sah: token tidak valid'], 401);
         }
 
-        // 1. Validasi Input (lengkap dengan batas wajar agar data sensor rusak tertolak)
+        // 1. Validasi Input (ambil rentang dari config/hydro.php agar terpusat)
+        $limits = config('hydro.limits');
         $validator = Validator::make($request->all(), [
-            'ph'   => 'required|numeric|min:0|max:14',
-            'tds'  => 'required|numeric|min:0|max:5000',
-            'suhu' => 'required|numeric|min:-10|max:60',
+            'ph'   => 'required|numeric|between:' . $limits['ph']['min'] . ',' . $limits['ph']['max'],
+            'tds'  => 'required|numeric|between:' . $limits['tds']['min'] . ',' . $limits['tds']['max'],
+            'suhu' => 'required|numeric|between:' . $limits['suhu']['min'] . ',' . $limits['suhu']['max'],
             'status_pompa_ph'   => 'nullable|in:ON,OFF',
             'status_pompa_tds'  => 'nullable|in:ON,OFF',
             'status_pendingin'  => 'nullable|in:ON,OFF',
@@ -69,10 +73,12 @@ class DashboardController extends Controller
         $data->suhu = $request->suhu;
 
         // 2. Logika Sinkronisasi Status (Prioritas Kiriman ESP32)
-        // Jika ESP32 mengirim status, gunakan itu. Jika tidak, hitung otomatis berdasarkan ambang batas baru.
-        $data->status_pompa_ph = $request->status_pompa_ph ?? (($request->ph < 5.5) ? 'ON' : 'OFF');
-        $data->status_pompa_tds = $request->status_pompa_tds ?? (($request->tds < 560) ? 'ON' : 'OFF');
-        $data->status_pendingin = $request->status_pendingin ?? (($request->suhu > 32.0) ? 'ON' : 'OFF');
+        // Jika ESP32 mengirim status, gunakan itu. Jika tidak, hitung otomatis
+        // berdasarkan ambang batas dari config/hydro.php.
+        $th = config('hydro.thresholds');
+        $data->status_pompa_ph = $request->status_pompa_ph ?? (($request->ph < $th['pump']['ph_on_below']) ? 'ON' : 'OFF');
+        $data->status_pompa_tds = $request->status_pompa_tds ?? (($request->tds < $th['pump']['tds_on_below']) ? 'ON' : 'OFF');
+        $data->status_pendingin = $request->status_pendingin ?? (($request->suhu > $th['cooler']['on_above']) ? 'ON' : 'OFF');
 
         $data->save();
 
