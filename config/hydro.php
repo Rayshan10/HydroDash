@@ -46,6 +46,10 @@ return [
     // (ESP32 mengirim tiap ±5 detik, jadi 120 detik cukup aman).
     'stale_after_seconds' => 120,
 
+    // Batas rate endpoint grup `api` (permintaan/menit per IP). Polling dashboard
+    // ±60/menit + ESP32 ±12/menit aman di bawah 240; berlindung dari spam.
+    'api_rate_limit' => 240,
+
     // Pemeliharaan database: perintah `sensors:prune` menghapus data lebih tua
     // dari X hari (dijadwalkan harian di routes/console.php).
     'prune' => [

@@ -185,6 +185,9 @@
             // tidak muncul berulang (baris tabel & titik grafik tak ter-diduplikasi tiap detik)
             let lastDataId = {{ ($latest && $latest->id) ? $latest->id : 'null' }};
 
+            // Penghitung kegagalan jaringan berturut-turut (untuk pesan retry)
+            let fetchFailures = 0;
+
             // Helper: indikator Live/Offline berdasarkan usia data terakhir
             function updateStaleStatus(ageSeconds) {
                 const el = document.getElementById('live-status');
@@ -413,11 +416,23 @@
                     (isOn ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700');
             }
 
+            // Helper: chip merah saat dashboard gagal bersentuhan dengan server
+            // (server mati / kabel jaringan putus), != dari ESP32 yang "stale"
+            function updateConnectionError(failures) {
+                const el = document.getElementById('live-status');
+                if (!el) return;
+                el.innerText = '● Tidak dapat terhubung (percobaan ke-' + failures + ')';
+                el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700';
+            }
+
             async function fetchLatestData() {
                 try {
                     // Route ini harus sesuai dengan yang ada di api.php Anda
                     const response = await fetch('/api/get-latest-hydro');
                     const data = await response.json();
+
+                    // Komunikasi dengan server berhasil -> reset penghitung gagal
+                    fetchFailures = 0;
 
                     // Response tidak OK (mis. 404 = DB masih kosong) -> tampilkan placeholder dan
                     // JANGAN perbarui grafik/tabel (mencegah nilai undefined/NaN masuk ke UI)
@@ -442,7 +457,11 @@
                     checkAlerts(data.ph, data.suhu, data.tds);
                     updateTable(data);
                 } catch (error) {
-                    console.error("Gagal mengambil data:", error);
+                    // Server tidak terjangkau (fetch error) — JANGAN sembunyikan chip,
+                    // tampilkan status putus koneksi dengan hitungan percobaan.
+                    fetchFailures++;
+                    updateConnectionError(fetchFailures);
+                    console.error("Gagal mengambil data (percobaan ke-" + fetchFailures + "):", error);
                 }
             }
 

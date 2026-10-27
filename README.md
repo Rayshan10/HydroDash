@@ -57,6 +57,7 @@ Daftar *routes* dan endpoint utama yang dapat diakses:
   - `GET /` : Halaman Dashboard
   - `POST /api/terima-data` : Endpoint satu-satunya bagi ESP32 untuk mengirimkan data sensor.
   - `GET /api/get-latest-hydro` : *Routes* AJAX untuk mengambil data terbaru secara otomatis.
+  - Semua endpoint `/api/*` dilindungi *rate limit* 240 permintaan/menit per IP (`config/hydro.php` → `api_rate_limit`) — polling tiap 1 detik tetap jauh di bawah ambang, spam terkendali.
 - **Laporan**:
   - `GET /report` : Menampilkan ringkasan data berdasarkan jenis laporan (type=daily/monthly/yearly).
   - `GET /report/export` : Meng-*export* data sebagai file (seperti CSV/Excel).
@@ -106,4 +107,32 @@ Jadwal otomatis (harian pukul 03:00) sudah terdaftar di `routes/console.php`. Di
 php artisan schedule:work    # proses background; jalankan saat development
 ```
 
-atau daftarkan **Task Scheduler** (setiap menit) yang mengeksekusi `php artisan schedule:run` di folder proyek. Setelah mengubah `IOT_DEVICE_TOKEN`, jalankan `php artisan config:clear`.
+atau daftarkan **Task Scheduler** (setiap menit) yang mengeksekusi `php artisan schedule:run` di folder proyek:
+
+```powershell
+schtasks /Create /TN "HydroDash-Sched" /SC MINUTE /TR "php C:\laragon\www\HydroDash\artisan schedule:run" /F
+```
+
+Untuk memantau kesehatan data (jumlah baris, rentang waktu, usia data terkini, ukuran tabel, sisa data yang akan terprune):
+
+```bash
+php artisan sensors:stats
+```
+
+Setelah mengubah `IOT_DEVICE_TOKEN`, jalankan `php artisan config:clear`.
+
+## 9. Uji Otomatis (php artisan test)
+Proyek ini sudah punya rangkaian uji fitur berbasis PHPUnit — dijalankan di **sqlite in-memory**, jadi MySQL/database asli sepenuhnya aman:
+
+```bash
+php artisan test
+```
+
+Cakupan uji (`tests/Feature/`):
+- **IngestTest** — token wajib (401 tanpa/berbeda token), mekanisme *fail-closed* saat config token kosong, penerimaan via header `X-Device-Token` dan field `token`, pesan validasi tetap berbahasa Indonesia (kontrak 400 untuk ESP32), fallback status relay dari threshold config, dan prioritas status kiriman ESP32.
+- **ApiThrottleTest** — *rate limit* API aktif dan ambangnya dikendalikan `hydro.api_rate_limit`.
+- **PruneCommandTest** — menolak `--days` < 1 dan penghapusan baris lama bersifat idempoten.
+- **ReportTest** — keempat jenis laporan tampil, laporan kosong tertangani rapi, export CSV berisikan header kolom yang benar, dan PDF berhasil dihasilkan.
+- **ExampleTest** — halaman dashboard merespons 200 dengan database kosong sekalipun.
+
+Agregasi SQL laporan ditulis portabel untuk MySQL **dan** sqlite (`HOUR()`/`MONTH()` di MySQL, `strftime('%H')`/`strftime('%m')` di sqlite), sehingga uji bisa berjalan di keduanya.

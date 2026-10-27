@@ -83,9 +83,10 @@ class ReportController extends Controller
 
                 // Rata-rata tiap bulan dihitung langsung di SQL (GROUP BY bulan) —
                 // dua query, bukan 12 query terpisah lalu dirata-rata di PHP (N+1).
-                $rows = SensorData::selectRaw('MONTH(created_at) as month, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds')
+                $monthExpr = $this->sqlMonth();
+                $rows = SensorData::selectRaw("{$monthExpr} as month, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds")
                     ->whereYear('created_at', (int) $year)
-                    ->groupBy(DB::raw('MONTH(created_at)'))
+                    ->groupBy(DB::raw($monthExpr))
                     ->orderBy('month')
                     ->get();
 
@@ -153,6 +154,26 @@ class ReportController extends Controller
      */
 
     /**
+     * Ekspresi SQL ambil jam — portabel di MySQL (HOUR) dan sqlite
+     * (strftime %H; sqlite tidak punya fungsi HOUR).
+     */
+    private function sqlHour(): string
+    {
+        $sqlite = DB::connection()->getDriverName() === 'sqlite';
+        return $sqlite ? "strftime('%H', created_at)" : 'HOUR(created_at)';
+    }
+
+    /**
+     * Ekspresi SQL ambil bulan — portabel di MySQL (MONTH) dan sqlite
+     * (strftime %m; sqlite tidak punya fungsi MONTH).
+     */
+    private function sqlMonth(): string
+    {
+        $sqlite = DB::connection()->getDriverName() === 'sqlite';
+        return $sqlite ? "strftime('%m', created_at)" : 'MONTH(created_at)';
+    }
+
+    /**
      * Rata-rata per hari dihitung langsung di SQL (GROUP BY DATE) — dua query
      * untuk seluruh rentang, bukan satu query per hari lalu di-rata-ratakan di
      * PHP (N+1). Status relay diambil dari baris TERAKHIR tiap hari (MAX(id)).
@@ -189,9 +210,10 @@ class ReportController extends Controller
     {
         // Rata-rata per jam dihitung di SQL (GROUP BY HOUR) — dua query untuk
         // seluruh hari, bukan 24 query terpisah (N+1).
-        $rows = SensorData::selectRaw('HOUR(created_at) as hour, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds, COUNT(*) as total')
+        $hourExpr = $this->sqlHour();
+        $rows = SensorData::selectRaw("{$hourExpr} as hour, MAX(id) as last_id, AVG(suhu) as avg_suhu, AVG(ph) as avg_ph, AVG(tds) as avg_tds, COUNT(*) as total")
             ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
-            ->groupBy(DB::raw('HOUR(created_at)'))
+            ->groupBy(DB::raw($hourExpr))
             ->orderBy('hour')
             ->get();
 

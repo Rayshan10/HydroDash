@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Endpoint ESP32 (`/api/terima-data`) hidup di grup `api` tanpa CSRF,
         // sehingga tidak perlu pengecualian di sini. Route web ingest sudah
         // dihapus pada Fase 3 (single endpoint dedupe).
+
+        // Aktifkan rate limiting grup api — besarnya diatur lewat
+        // RateLimiter::for('api', ...) di AppServiceProvider
+        // (default 240 req/menit per IP dari config hydro.api_rate_limit).
+        $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
