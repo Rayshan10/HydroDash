@@ -14,7 +14,11 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        // Whitelist jenis laporan agar nilai liar jatuh secara eksplisit ke 'daily'
         $type = $request->input('type', 'daily');
+        if (!in_array($type, ['daily', 'monthly', 'yearly', 'period'])) {
+            $type = 'daily';
+        }
         $date = $request->input('date', Carbon::now()->format('Y-m-d'));
         $month = $request->input('month', Carbon::now()->format('Y-m'));
         $year = $request->input('year', Carbon::now()->year);
@@ -99,6 +103,10 @@ class ReportController extends Controller
                 break;
 
             case 'period':
+                // Jika rentang terbalik (start > end), tukar otomatis agar laporan tidak pernah "negatif"
+                if (Carbon::parse($startDate)->gt(Carbon::parse($endDate))) {
+                    [$startDate, $endDate] = [$endDate, $startDate];
+                }
                 $startDateObj = Carbon::parse($startDate)->startOfDay();
                 $endDateObj = Carbon::parse($endDate)->endOfDay();
                 $allData = SensorData::whereBetween('created_at', [$startDateObj, $endDateObj])->get();
@@ -231,8 +239,13 @@ class ReportController extends Controller
     private function getDataForExport(Request $request)
     {
         $type = $request->input('type', 'daily');
+        if (!in_array($type, ['daily', 'monthly', 'yearly', 'period'])) {
+            $type = 'daily';
+        }
         if ($type === 'daily') {
-            return SensorData::whereDate('created_at', $request->date)->get();
+            // Fallback ke hari ini supaya export tanpa parameter `date` tidak menghasilkan whereDate(null)
+            $date = $request->input('date', Carbon::now()->format('Y-m-d'));
+            return SensorData::whereDate('created_at', $date)->get();
         }
         // Untuk Bulanan/Tahunan/Periode, ambil data rata-rata agar file tidak terlalu bengkak
         return $this->index($request)->getData()['logs'];

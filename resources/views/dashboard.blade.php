@@ -9,40 +9,31 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<div id="alert-container" class="max-w-6xl mx-auto mb-4 hidden">
-    <div
-        class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex items-center justify-between animate-bounce">
-        <div class="flex items-center">
-            <svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-                <p class="font-bold">Peringatan Sistem!</p>
-                <p id="alert-message" class="text-sm">Kondisi air sedang tidak optimal.</p>
-            </div>
-        </div>
-        <button onclick="document.getElementById('alert-container').remove()" class="text-red-500 hover:text-red-800">
-            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
-            </svg>
-        </button>
-    </div>
-</div>
-
-
 <body class="bg-gray-100 p-8">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-green-700">HydroDash Monitoring</h1>
-            <span
-                class="bg-white px-4 py-2 rounded-full shadow-sm text-sm text-gray-500 font-medium border border-gray-200">
-                Update Terakhir:
-                {{ $latest ? \Carbon\Carbon::now('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : '--:--' }}
-            </span>
+    <div id="alert-container" class="max-w-6xl mx-auto mb-4 hidden">
+        <div
+            class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex items-center justify-between animate-bounce">
+            <div class="flex items-center">
+                <svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                    <p class="font-bold">Peringatan Sistem!</p>
+                    <p id="alert-message" class="text-sm">Kondisi air sedang tidak optimal.</p>
+                </div>
+            </div>
+            <!-- Sembunyikan saja (jangan dihapus) agar alert bisa muncul kembali tanpa reload -->
+            <button onclick="document.getElementById('alert-container').classList.add('hidden')"
+                class="text-red-500 hover:text-red-800">
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
+                </svg>
+            </button>
         </div>
-
+    </div>
+    <div class="max-w-6xl mx-auto">
         <!-- Report Navigation -->
         <div class="mb-8">
             <a href="{{ route('report.index') }}"
@@ -54,21 +45,21 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
                 <span class="text-sm font-bold text-gray-600">Sistem Pendingin</span>
-                <span
+                <span id="status-pendingin"
                     class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pendingin ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
                     {{ $latest->status_pendingin ?? 'OFF' }}
                 </span>
             </div>
             <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
                 <span class="text-sm font-bold text-gray-600">Pompa pH Up</span>
-                <span
+                <span id="status-pompa-ph"
                     class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pompa_ph ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
                     {{ $latest->status_pompa_ph ?? 'OFF' }}
                 </span>
             </div>
             <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between border border-gray-200">
                 <span class="text-sm font-bold text-gray-600">Pompa Nutrisi</span>
-                <span
+                <span id="status-pompa-tds"
                     class="px-3 py-1 rounded-full text-xs font-bold {{ ($latest->status_pompa_tds ?? 'OFF') == 'ON' ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700' }}">
                     {{ $latest->status_pompa_tds ?? 'OFF' }}
                 </span>
@@ -376,33 +367,72 @@
             });
 
             // 4. Logika Update Real-Time
+            // Helper: update badge relay (pompa/pendingin); status kosong -> tampil '--' abu-abu
+            function updateRelayBadge(elemId, status) {
+                const el = document.getElementById(elemId);
+                if (!el) return;
+
+                if (status === undefined || status === null) {
+                    el.innerText = '--';
+                    el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-400';
+                    return;
+                }
+
+                const isOn = status === 'ON';
+                el.innerText = status;
+                el.className = 'px-3 py-1 rounded-full text-xs font-bold ' +
+                    (isOn ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-red-100 text-red-700');
+            }
+
             async function fetchLatestData() {
                 try {
                     // Route ini harus sesuai dengan yang ada di api.php Anda
                     const response = await fetch('/api/get-latest-hydro');
                     const data = await response.json();
 
-                    if (data) {
-                        updateUI(data);
-                        updateCharts(data);
-                        checkAlerts(data.ph, data.suhu, data.tds);
-                        updateTable(data);
+                    // Response tidak OK (mis. 404 = DB masih kosong) -> tampilkan placeholder dan
+                    // JANGAN perbarui grafik/tabel (mencegah nilai undefined/NaN masuk ke UI)
+                    if (!response.ok) {
+                        updateUI(null);
+                        return;
                     }
+
+                    updateUI(data);
+                    updateCharts(data);
+                    checkAlerts(data.ph, data.suhu, data.tds);
+                    updateTable(data);
                 } catch (error) {
                     console.error("Gagal mengambil data:", error);
                 }
             }
 
             function updateUI(data) {
-                // Update Nilai pada Kartu Dashboard secara dinamis
                 const suhuElem = document.getElementById('suhu-val');
                 const phElem = document.getElementById('ph-val');
                 const tdsElem = document.getElementById('tds-val');
                 const timeElem = document.getElementById('update-time');
 
+                // Belum ada data sensor sama sekali -> tampilkan placeholder "--"
+                if (!data) {
+                    if (suhuElem) suhuElem.innerText = '--°C';
+                    if (phElem) phElem.innerText = '--';
+                    if (tdsElem) tdsElem.innerHTML = '-- <span class="text-lg font-normal">PPM</span>';
+                    if (timeElem) timeElem.innerText = 'Update Terakhir: --:--';
+                    updateRelayBadge('status-pompa-ph', null);
+                    updateRelayBadge('status-pompa-tds', null);
+                    updateRelayBadge('status-pendingin', null);
+                    return;
+                }
+
+                // Update Nilai pada Kartu Dashboard secara dinamis
                 if (suhuElem) suhuElem.innerText = data.suhu + "°C";
                 if (phElem) phElem.innerText = data.ph;
                 if (tdsElem) tdsElem.innerHTML = data.tds + ' <span class="text-lg font-normal">PPM</span>';
+
+                // Update status relay di kartu atas (pompa pH/TDS & pendingin)
+                updateRelayBadge('status-pompa-ph', data.status_pompa_ph);
+                updateRelayBadge('status-pompa-tds', data.status_pompa_tds);
+                updateRelayBadge('status-pendingin', data.status_pendingin);
 
                 // Update Waktu Terakhir di Header
                 if (timeElem) {

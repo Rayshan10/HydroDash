@@ -40,11 +40,23 @@ class DashboardController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi Input
+        // 0. Autentikasi perangkat: hanya IoT (ESP32) dengan token sah yang boleh kirim data.
+        //    Token bisa dikirim via header `X-Device-Token` atau field `token` (memudahkan sketch ESP32).
+        $token = $request->header('X-Device-Token') ?? $request->input('token');
+        $expectedToken = config('hydro.device_token');
+
+        if (!$expectedToken || !is_string($token) || !hash_equals($expectedToken, $token)) {
+            return response()->json(['status' => 'error', 'message' => 'Perangkat tidak sah: token tidak valid'], 401);
+        }
+
+        // 1. Validasi Input (lengkap dengan batas wajar agar data sensor rusak tertolak)
         $validator = Validator::make($request->all(), [
-            'ph'   => 'required|numeric',
-            'tds'  => 'required|numeric',
-            'suhu' => 'required|numeric',
+            'ph'   => 'required|numeric|min:0|max:14',
+            'tds'  => 'required|numeric|min:0|max:5000',
+            'suhu' => 'required|numeric|min:-10|max:60',
+            'status_pompa_ph'   => 'nullable|in:ON,OFF',
+            'status_pompa_tds'  => 'nullable|in:ON,OFF',
+            'status_pendingin'  => 'nullable|in:ON,OFF',
         ]);
 
         if ($validator->fails()) {

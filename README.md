@@ -58,3 +58,33 @@ Daftar *routes* dan endpoint utama yang dapat diakses:
   - `GET /report` : Menampilkan ringkasan data berdasarkan jenis laporan (type=daily/monthly/yearly).
   - `GET /report/export` : Meng-*export* data sebagai file (seperti CSV/Excel).
   - `GET /report/pdf` : Membuat (*generate*) dan mengunduh dokumen PDF laporan.
+
+## 7. Autentikasi Perangkat IoT (ESP32)
+Mulai fase hardening pertama, endpoint `POST /terima-data` dan `POST /api/terima-data` **wajib mengirim device token**. Token diatur di file `.env`:
+
+```env
+IOT_DEVICE_TOKEN=
+```
+
+Contoh pengiriman data dari sketch ESP32 (Arduino):
+
+```cpp
+HTTPClient http;
+http.begin(client, "http://hydrodash.test/terima-data"); // atau http://IP-SERVER/terima-data
+http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+http.addHeader("X-Device-Token", "hd_TOKEN_ANDA");       // <-- WAJIB: token device
+
+String payload =
+    "ph=" + String(ph, 2) +
+    "&tds=" + String(tds, 0) +
+    "&suhu=" + String(suhu, 2) +
+    "&status_pompa_ph=" + String(pompaPh ? "ON" : "OFF") +     // opsional
+    "&status_pompa_tds=" + String(pompaTds ? "ON" : "OFF") +   // opsional
+    "&status_pendingin=" + String(pendingin ? "ON" : "OFF");   // opsional
+
+int code = http.POST(payload);
+// 201 = data tersimpan, 401 = token salah/tidak ada, 400 = nilai tidak valid
+http.end();
+```
+
+Alternatif tanpa header: tambahkan `&token=hd_TOKEN_ANDA` ke payload. Batas validasi: `ph` 0–14, `tds` 0–5000 PPM, `suhu` −10–60 °C; field `status_*` hanya menerima `ON`/`OFF`. Setelah mengubah `IOT_DEVICE_TOKEN`, jalankan `php artisan config:clear`.
