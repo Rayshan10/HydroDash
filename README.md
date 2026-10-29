@@ -1,5 +1,24 @@
 # HydroDash
 
+## Preview
+
+Tampilan aplikasi diambil langsung dari aplikasi yang sedang berjalan — datanya hasil **simulator perangkat** (lihat [bab 10](#10-simulator-perangkat-tanpa-hardware)).
+
+### 🖥️ Dashboard Real-Time
+Kartu status relay, indikator *data masuk / tertahan* (chip kuning membuktikan deteksi offline bekerja), tiga grafik Chart.js dengan garis ambang batas, dan log sensor terbaru.
+
+![Dashboard HydroDash](docs/screenshots/dashboard.png)
+
+### 📊 Laporan Harian
+Empat kartu statistik (rata-rata, min/max, frekuensi aktivitas relay), tren suhu/pH/TDS antar-jam, dan tabel rata-rata per jam yang terpaginasi. Data bisa dieskspor ke CSV & PDF langsung dari halaman ini.
+
+![Laporan Harian](docs/screenshots/laporan-harian.png)
+
+### 📋 Tabel Agregasi Periode
+Gabungan data asli (Februari) dan data demo — isi tabel agregasi seperti ini juga yang dibenamkan ke laporan CSV/PDF.
+
+![Tabel Laporan Periode](docs/screenshots/laporan-periode.png)
+
 ## 1. Judul Proyek & Ringkasan
 **HydroDash**
 HydroDash merupakan sebuah sistem pemantauan kualitas/kuantitas air (dan hidroponik) yang menerima data pengukuran dari perangkat IoT (seperti ESP32) secara *real-time*. Sistem ini menyediakan sebuah dashboard interaktif dengan sistem pelaporan terpadu untuk kemudahan analisis dan ekstraksi data.
@@ -136,3 +155,29 @@ Cakupan uji (`tests/Feature/`):
 - **ExampleTest** — halaman dashboard merespons 200 dengan database kosong sekalipun.
 
 Agregasi SQL laporan ditulis portabel untuk MySQL **dan** sqlite (`HOUR()`/`MONTH()` di MySQL, `strftime('%H')`/`strftime('%m')` di sqlite), sehingga uji bisa berjalan di keduanya.
+
+## 10. Simulator Perangkat (Tanpa Hardware)
+Belum punya rangkaian ESP32? Proyek ini menyertakan simulator CLI (`tools/simulator_esp32.php`) yang meniru perilaku sketch ESP32 dengan kontrak identik: kirim `POST /api/terima-data` tiap ±5 detik memakai device token dari `.env`. Kelak saat rangkaian asli tersedia, sketch cukup menggantikan simulator tanpa perubahan apa pun di server.
+
+```bash
+# Tanam riwayat 24 jam terakhir (sekali jalan) agar grafik & laporan langsung terisi
+php tools/simulator_esp32.php --backfill=24
+
+# Mode live — kirim tiap 5 detik sampai Ctrl+C (chip dashboard jadi hijau)
+php tools/simulator_esp32.php
+
+# Batas siklus (praktis untuk pengujian cepat)
+php tools/simulator_esp32.php --cycles=5
+```
+
+Opsi lainnya: `--url=http://alamat:port` untuk menunjuk server lain dan `--interval=5` untuk mengatur jeda kirim.
+
+Nilai yang dibuat realistis: pH berayun dekat area ideal, TDS turun lalu refill (560–840 PPM), suhu mengikuti siklus harian, plus episode acak kecil (pH drop, TDS drop, gelombang panas) sehingga status pompa/pendingin sesekali berubah ON sesuai logika threshold — sama seperti perangkat nyata.
+
+**Membersihkan data demo** bila ingin database kembali bersih (ganti tanggal sesuai mulai demo):
+
+```bash
+php artisan tinker --execute="DB::table('sensor_data')->where('created_at','>=','2026-10-29 00:00:00')->delete();"
+```
+
+Pantau kesehatan data kapan pun dengan `php artisan sensors:stats`.
